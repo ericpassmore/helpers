@@ -1,0 +1,12 @@
+# clone the forked repo
+git clone https://github.com/CLONE.git
+# change into git repo
+cd CLONE
+# set upstream to main to sync changes
+git remote add upstream https://github.com/eosnetworkfoundation/GITGIT.git
+# sync changes
+git pull upstream main
+# change the branch so have multiple choices for changes
+git checkout -b BRANCH_NAME
+# push up using branch name
+git push -u origin BRANCH_NAME
