@@ -23,5 +23,6 @@ PID=$(ps -u "$USER" | grep nodeos | cut -d" " -f2)
 if [ -n "$PID" ]; then
   echo "kill -15 $PID"
 fi
-# clean out old nightly test logs
+# clean out old logs
 find "$LOG_DIR" -mtime +14 | xargs /bin/rm -rf
+cp /dev/null "$LOG_DIR"/nodeos-eric-test.log
