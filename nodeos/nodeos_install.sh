@@ -15,7 +15,7 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
-cd "$LEAP_BUILD_DIR" || exit
+cd "${LEAP_BUILD_DIR:?}" || exit
 
 apt-get remove -y leap >> "$LOG_DIR"/nodeos_nightly_install_"${TODAY}".log 2>&1
 apt-get update >> "$LOG_DIR"/nodeos_nightly_install_"${TODAY}".log 2>&1

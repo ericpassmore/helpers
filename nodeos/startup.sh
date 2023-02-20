@@ -18,7 +18,7 @@ else
   exit
 fi
 
-cd "$LEAP_BUILD_DIR" || exit
+cd "${LEAP_BUILD_DIR:?}" || exit
 
 if [ "$DIRTY" == "Y" ]; then
   nodeos --hard-replay --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" >> "$LOG_DIR"/nodeos-eric-test.log 2>&1

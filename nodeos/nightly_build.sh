@@ -15,7 +15,7 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
-cd "$LEAP_GIT_DIR" || exit
+cd "${LEAP_GIT_DIR:?}" || exit
 
 TODAY=$(date -u +%F)
 git pull
