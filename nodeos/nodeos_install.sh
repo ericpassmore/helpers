@@ -17,6 +17,8 @@ else
 fi
 cd "${LEAP_BUILD_DIR:?}" || exit
 
+DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND
 apt-get remove -y leap >> "$LOG_DIR"/nodeos_nightly_install_"${TODAY}".log 2>&1
 apt-get update >> "$LOG_DIR"/nodeos_nightly_install_"${TODAY}".log 2>&1
 apt-get install -y ./leap[-_][0-9]*.deb >> "$LOG_DIR"/nodeos_nightly_install_"${TODAY}".log 2>&1
