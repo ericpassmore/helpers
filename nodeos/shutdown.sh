@@ -20,7 +20,7 @@ fi
 cd ${LOG_DIR:?} || exit
 
 USER=$(id -un)
-PID=$(ps -u "$USER" | grep nodeos | cut -d" " -f1)
+PID=$(ps -u "$USER" | grep nodeos | sed -e 's/^[[:space:]]*//' | cut -d" " -f1)
 # shutdown
 if [ -n "$PID" ]; then
   kill -15 $PID
