@@ -20,6 +20,7 @@ cd "${LEAP_GIT_DIR:?}" || exit
 TODAY=$(date -u +%F)
 git pull
 git submodule update --init --recursive
+
 [ ! -d "$LEAP_BUILD_DIR" ] && mkdir -p "$LEAP_BUILD_DIR"
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 "$LEAP_BUILD_DIR" >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
 cd "$LEAP_BUILD_DIR" || exit
