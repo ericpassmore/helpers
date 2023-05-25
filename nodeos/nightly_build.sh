@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
+START=$(date +%s.%N)
+NPROC=16
 TUID=$(id -ur)
+
+TEMPS=$(~/scripts/get_temp.sh)
 
 # must not be root to run
 if [ "$TUID" -eq 0 ]; then
@@ -24,4 +28,8 @@ git submodule update --init --recursive
 [ ! -d "$LEAP_BUILD_DIR" ] && mkdir -p "$LEAP_BUILD_DIR"
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 "$LEAP_BUILD_DIR" >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
 cd "$LEAP_BUILD_DIR" || exit
-make -j "16" package >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
+make -j "${NPROC}" package >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
+END=$(date +%s.%N)
+
+WALL_CLOCK_SEC=$(echo $END - $START | bc)
+echo "${TODAY} NODEOS BUILD TOOK ${WALL_CLOCK_SEC} secs with PROC ${NPROC} ${TEMPS}" >> "$LOG_DIR"/nodeos_nightly_build_times.log 
