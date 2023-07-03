@@ -1,5 +1,6 @@
 #!/bin/env bash
 DIRTY=${1:-"NO"}
+STATE_HISTORY=${2:-"YES"}
 
 set -x
 TUID=$(id -ur)
@@ -20,8 +21,14 @@ fi
 
 cd "${LEAP_BUILD_DIR:?}" || exit
 
+if [ "$STATE_HISTORY" == "NO" ]; then
+  nodeos --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR"
+  exit 0
+fi
+
 if [ "$DIRTY" == "Y" ]; then
-  nodeos --hard-replay --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" >> "$LOG_DIR"/nodeos-eric-test.log 2>&1
+  # hard replay
+  nodeos --hard-replay --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" --disable-replay-opts --contracts-console >> "$LOG_DIR"/nodeos-eric-test.log 2>&1
 else
-  nodeos --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" >> "$LOG_DIR"/nodeos-eric-test.log 2>&1
+  nodeos --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" --disable-replay-opts --contracts-console >> "$LOG_DIR"/nodeos-eric-test.log 2>&1
 fi

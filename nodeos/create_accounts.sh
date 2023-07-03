@@ -8,6 +8,16 @@ cat .wallet.pw | cleos wallet unlock --password
 # create system accounts
 EOSTokenPublicKey=$(grep Public ~/eosio-wallet/eosio.token.keys | cut -d: -f2 | sed 's/ //g')
 cleos create account eosio eosio.token $EOSTokenPublicKey
+cleos create account eosio eosio.bpay $EOSTokenPublicKey
+cleos create account eosio eosio.msig $EOSTokenPublicKey
+cleos create account eosio eosio.names $EOSTokenPublicKey
+cleos create account eosio eosio.ram $EOSTokenPublicKey
+cleos create account eosio eosio.ramfee $EOSTokenPublicKey
+cleos create account eosio eosio.saving $EOSTokenPublicKey
+cleos create account eosio eosio.stake $EOSTokenPublicKey
+cleos create account eosio eosio.vpay $EOSTokenPublicKey
+cleos create account eosio eosio.rex $EOSTokenPublicKey
+cleos create account eosio eosio.wrap $EOSTokenPublicKey
 EOSSystemPublicKey=$(grep Public ~/eosio-wallet/eosio.system.keys | cut -d: -f2 | sed 's/ //g')
 cleos create account eosio eosio.system $EOSSystemPublicKey
 # create new account
