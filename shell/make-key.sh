@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 FILENAME=$1
-HOSTNAME=$2
+EMAIL=$2
+HOSTNAME=$3
 
-ssh-keygen -t ed25519 -f ~/.ssh/$FILENAME.key -C "first.last@eosnetwork.com - $HOSTNAME"
+ssh-keygen -t ed25519 -f ~/.ssh/"${FILENAME}".key -C "${EMAIL} - ${HOSTNAME}"
