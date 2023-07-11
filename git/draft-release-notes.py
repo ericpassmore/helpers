@@ -3,15 +3,18 @@ import subprocess
 import re
 
 #
-#
-#commit 58deb5b51
-#Merge: ef910f795 1d0aef60c
-#Author: Kevin Heifner <heifnerk@objectcomputing.com>
-#Date:   Thu Jun 29 07:03:40 2023 -0400
-#
-#    Merge pull request #1350 from AntelopeIO/GH-1302-docs-4.0
-#
-#    [4.0] Docs: Additional nodeos --help info
+# Class to hold information on git merge
+# members
+#   commit
+#   merge
+#   git_author_name
+#   date
+#   title
+#   prnumber
+#   prlog
+# optional members
+#   is_draft
+#   git_contributor
 #
 #
 class GitMerge:
@@ -22,6 +25,8 @@ class GitMerge:
     embed_pattern = re.compile(r'^\s+(.*?)$')
     prnum_pattern = re.compile(r'#(\d+)')
 
+    # Block has following fields
+    # commit, Merge, Author, Date, PR Log, Title
     def __init__(self, block):
         prlog_filled = False
         self.prnumber = 0
@@ -37,7 +42,7 @@ class GitMerge:
 
             author_match = self.author_pattern.search(item)
             if author_match:
-                self.author = author_match.group(1)
+                self.git_author_name = author_match.group(1)
 
             date_match = self.date_pattern.search(item)
             if date_match:
@@ -46,6 +51,7 @@ class GitMerge:
             # multiple lines with leading tabs they appear nested aka embed
             # first time an embed line is detected it is treated as a PR Log Entry
             # all subsequent lines are treated as PR Titles
+            # last title is set overriding previous titles
             embed_match = self.embed_pattern.search(item)
             if embed_match:
                 if prlog_filled:
@@ -58,7 +64,14 @@ class GitMerge:
                     prlog_filled = True
 
     def __str__(self):
-        return f"Commit: {self.commit}\nMerge: {self.merge}\nAuthor: {self.author}\nDate: {self.date}\nTitle: {self.title}\nPR: {self.prlog}\nPR Num: {self.prnumber}"
+        commit = f"Commit: {self.commit}\n"
+        merge = f"Merge: {self.merge}\n"
+        git_author_name = f"Author: {self.git_author_name}\n"
+        date = f"Date: {self.date}\n"
+        title = f"Title: {self.title}\n"
+        prnum = f"PR Num: {self.prnumber}\n"
+        prlog = f"PR: {self.prlog}\n"
+        return commit + merge + git_author_name + date + title + prnum + prlog
 
 def get_git_log_messages(repo_path, start):
     range=start+'..HEAD'
@@ -70,14 +83,29 @@ def get_git_log_messages(repo_path, start):
 
     return result.stdout
 
+def get_git_pr(prnum):
+    # gh pr view --json number,title,author,reviews,isDraft,comments 1329
+    command = ['gh', 'pr', 'view', '--json', 'number,title,author,reviews,isDraft,comments', prnum]
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        raise Exception('Error executing command: {}\n{}'.format(command, result.stderr))
+
+    return result.stdout
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get git log messages from a repository.')
     parser.add_argument('repo_path', type=str, help='Path to the git repository')
     parser.add_argument('start', type=str, help='commit or tag that marks the beginning of the release')
+    parser.add_argument('--debug', action='store_true', help='print out debug statments')
 
     args = parser.parse_args()
-    messages = get_git_log_messages(args.repo_path,args.start)
+    if args.debug:
+        DEBUG=True
+    else:
+        DEBUG=False
 
+    messages = get_git_log_messages(args.repo_path,args.start)
     pattern = re.compile(r"^commit\s+\w+", re.MULTILINE)
     result = pattern.finditer(messages)
 
@@ -94,7 +122,8 @@ if __name__ == '__main__':
     for end in start_positions:
         # skip first
         if end > 0:
-            print(f"Text Block {start} to {end-1}")
+            if DEBUG:
+                print(f"Text Block {start} to {end-1}")
             merges.append(GitMerge(messages[start:end]))
         # last block's end is new block's start
         start = end

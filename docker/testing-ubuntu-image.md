@@ -5,10 +5,14 @@
 ```
 CONTAINER_NAME="chronicle"
 docker pull ubuntu:jammy
-docker create -it --name $CONTAINER_NAME --network=host ubuntu:jammy
+sudo docker volume create LEAP_PATCH
+# docker volume inspect LEAP_PATCH
+docker create -it --name $CONTAINER_NAME -v LEAP_PATCH:/shared-vol --network=host ubuntu:jammy
 docker start $CONTAINER_NAME
 docker attach $CONTAINER_NAME
 ```
+
+*Note: `sudo docker volume rm LEAP_PATCH` when finished
 
 ##Update
 
@@ -33,7 +37,7 @@ apt install build-essential g++ python3-dev autotools-dev libicu-dev libbz2-dev 
 ```
 apt install cmake
 ```
-**Boost**
+**Boost version**
 ```
 mkdir -p /opt/src/
 cd /opt/src || exit
@@ -55,3 +59,17 @@ The following directory should be added to compiler include paths:
 The following directory should be added to linker library paths:
 
 `/opt/src/boost_1_67_0/stage/lib`
+
+###Update for Leap
+
+```
+apt install clang libboost-all-dev cmake openssl
+apt install llvm-11
+apt install curl zlib1g pip
+pip install numpy
+sudo apt-get install -y \
+        libcurl4-openssl-dev \
+        libgmp-dev \
+        libssl-dev \
+        llvm-11-dev
+```
