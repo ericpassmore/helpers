@@ -5,15 +5,16 @@ HELP(){
   echo "This script does not modify anything. It assumes branches on same remote named origin"
   echo "This script checks if you are in a local git repository. If you are not this script will create a working directory to perform the work. Once the script successfully finsished the working directory will be cleaned up"
   echo ""
-  echo "view_commit_delta_between_branch.sh -i merge-into -f merge-from [-r git-owner/git-repository]"
+  echo "view_commit_delta_between_branch.sh -i merge-into -f merge-from [-r git-owner/git-repository] [-c] [-v]"
   echo "    -i : name of tag or branch we intend to merge into"
   echo "    -f : name of tag or branch we want to pull commits from"
   echo "    -r : name of git repository to compare, not required if running from local git repository"
+  echo "    -c : display line counts along with changed files"
   echo "    -v : verbose mode"
   exit
 }
 
-while getopts "vi:f:r:" option; do
+while getopts "cvi:f:r:" option; do
    case $option in
     i) # set build dir
       BRANCH_TO_MERGE_INTO=${OPTARG}
@@ -79,10 +80,10 @@ COMPARE() {
   git log --oneline origin/"$BRANCH_TO_MERGE_INTO"..origin/"$BRANCH_TO_MERGE_FROM" | cat
   echo -e '\033[1mFILES CHANGED\033[0m'
   # show files NOTE three dots
-  if [ ! $COUNT ]; then
+  if [ $COUNT != 1 ]; then
     git diff --name-only origin/"$BRANCH_TO_MERGE_INTO"...origin/"$BRANCH_TO_MERGE_FROM" | cat
   else
-    git diff --unified=0 origin/release/3.1...origin/release/4.0 | egrep -e '^@@' -e '^--' -e '^\+\+' | awk 'BEGIN {count=0} /^\@\@/ {count++} /^\+\+/ {printf "%d %s\n", count, $0; count=0}' | sort -rn
+    git diff --unified=0 origin/"$BRANCH_TO_MERGE_INTO"...origin/"$BRANCH_TO_MERGE_FROM" | egrep -e '^@@' -e '^--' -e '^\+\+' | awk 'BEGIN {count=0} /^\@\@/ {count++} /^\+\+/ {printf "%d %s\n", count, $0; count=0}' | sort -rn
   fi
 }
 
