@@ -27,6 +27,9 @@ while getopts "vi:f:r:" option; do
     v) # verbose ; setting to space prevents default
       MODE="verbose"
       ;;
+    c) # count lines; shows diff with line count
+      COUNT=1
+      ;;
     :) # no args
       HELP;
       ;;
@@ -43,6 +46,8 @@ fi
 
 if [ "$MODE" == "verbose" ]; then MODE=""
 else MODE="--quiet";
+fi
+if [ -z "$COUNT" ] || [ "$COUNT" != 1 ]; then COUNT=0
 fi
 
 
@@ -74,7 +79,11 @@ COMPARE() {
   git log --oneline origin/"$BRANCH_TO_MERGE_INTO"..origin/"$BRANCH_TO_MERGE_FROM" | cat
   echo -e '\033[1mFILES CHANGED\033[0m'
   # show files NOTE three dots
-  git diff --name-only origin/"$BRANCH_TO_MERGE_INTO"...origin/"$BRANCH_TO_MERGE_FROM" | cat
+  if [ ! $COUNT ]; then
+    git diff --name-only origin/"$BRANCH_TO_MERGE_INTO"...origin/"$BRANCH_TO_MERGE_FROM" | cat
+  else
+    git diff --unified=0 origin/release/3.1...origin/release/4.0 | egrep -e '^@@' -e '^--' -e '^\+\+' | awk 'BEGIN {count=0} /^\@\@/ {count++} /^\+\+/ {printf "%d %s\n", count, $0; count=0}' | sort -rn
+  fi
 }
 
 # shellcheck disable=SC2046
