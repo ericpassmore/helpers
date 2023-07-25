@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 START=$(date +%s.%N)
-NPROC=16
+NPROC=8
 TUID=$(id -ur)
 
 TEMPS=$(~/scripts/get_temp.sh)

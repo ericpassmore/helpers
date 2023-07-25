@@ -1,8 +1,9 @@
 #! /usr/bin/env bash
 
+pushd ~/eosio-wallet || exit
 #cleos wallet create --file .wallet.pw
 cleos wallet open
-cat .wallet.pw | cleos wallet unlock --password
+cat ~/eosio-wallet/.wallet.pw | cleos wallet unlock --password
 # import main EOSIO account private key
 #cleos wallet import --private-key 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3
 # create system accounts
@@ -32,3 +33,4 @@ HokiesPublicKey=$(grep Public ~/eosio-wallet/hokieshokies.keys | cut -d: -f2 | s
 cleos create account eosio hokieshokies $HokiesPublicKey
 AliceLionPublicKey=$(grep Public ~/eosio-wallet/alicetestlio.keys | cut -d: -f2 | sed 's/ //g')
 cleos create account  eosio alicetestlio $AliceLionPublicKey
+popd || exit
