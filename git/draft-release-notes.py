@@ -27,10 +27,11 @@ class GitMerge:
 
     # Block has following fields
     # commit, Merge, Author, Date, PR Log, Title
-    def __init__(self, block):
+    def __init__(self, block, DEBUG=False, DEBUG_PR_NUM=None):
         prlog_filled = False
-        self.prnumber = 0
-        lines = block.splitlines();
+        self.set_defaults()
+        lines = block.splitlines()
+
         for item in lines:
             commit_match = self.commit_pattern.search(item)
             if commit_match:
@@ -62,8 +63,16 @@ class GitMerge:
                     if prnum_match:
                         self.prnumber = prnum_match.group(1)
                     prlog_filled = True
+        if DEBUG == True and self.prnumber == DEBUG_PR_NUM:
+            dump = self.prepare_print()
+            print(f'***** PR NUMBER {self.prnumber} ******')
+            print(dump)
+
 
     def __str__(self):
+        return self.prepare_print()
+
+    def prepare_print(self):
         commit = f"Commit: {self.commit}\n"
         merge = f"Merge: {self.merge}\n"
         git_author_name = f"Author: {self.git_author_name}\n"
@@ -73,8 +82,18 @@ class GitMerge:
         prlog = f"PR: {self.prlog}\n"
         return commit + merge + git_author_name + date + title + prnum + prlog
 
+    def set_defaults(self):
+        self.commit = "NA"
+        self.merge = "NA"
+        self.git_author_name = "NA"
+        self.date = "NA"
+        self.title = "NA"
+        self.prnumber = 0
+        self.prlog = "NA"
+
 def get_git_log_messages(repo_path, start):
     range=start+'..HEAD'
+    #command = ['git', '-C', repo_path, 'log', range, '--abbrev-commit', '--merges', '--first-parent', '-n', '36ffebc02']
     command = ['git', '-C', repo_path, 'log', range, '--abbrev-commit', '--merges', '--first-parent']
     result = subprocess.run(command, capture_output=True, text=True)
 
@@ -98,6 +117,7 @@ if __name__ == '__main__':
     parser.add_argument('repo_path', type=str, help='Path to the git repository')
     parser.add_argument('start', type=str, help='commit or tag that marks the beginning of the release')
     parser.add_argument('--debug', action='store_true', help='print out debug statments')
+    parser.add_argument('-n', '--debug_pr_num', type=str, help='dump contents for this PR Id')
 
     args = parser.parse_args()
     if args.debug:
@@ -124,9 +144,10 @@ if __name__ == '__main__':
         if end > 0:
             if DEBUG:
                 print(f"Text Block {start} to {end-1}")
-            merges.append(GitMerge(messages[start:end]))
+            merges.append(GitMerge(messages[start:end], DEBUG, args.debug_pr_num))
         # last block's end is new block's start
         start = end
 
     for item in merges:
-        print(item)
+        if DEBUG != True:
+            print(item)
