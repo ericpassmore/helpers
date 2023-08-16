@@ -2,6 +2,18 @@ import argparse
 import subprocess
 import re
 import json
+import sys
+
+def useage():
+    message = "NOTE: Running this requires you have a local clone of the repository and you are in that directory\n"
+    message += "Example: git clone https://github.com/org/repo && cd repo && python3 $HELPER_PATH/draft-release-notes.py tag\n\n"
+    message += "Additional requirements: must have git installed and gh cli installed.\n"
+    message += "    See https://github.com/cli/cli and https://git-scm.com/book/en/v2/Getting-Started-Installing-Git\n\n"
+    message += "Platforms: This script has been tested on ubunut linux with python3\n"
+    message += "  - for a summary use the --oneline argument\n"
+    message += "  - to print this useage try the --useage argument\n"
+
+    return message
 
 #
 # Class to hold information on git merge
@@ -13,7 +25,6 @@ import json
 #   title of pr
 #   pr number
 #   pr log
-#
 #
 class GitMerge:
     commit_pattern = re.compile(r'^commit (\w+)')
@@ -176,19 +187,24 @@ def get_git_log_messages(repo_path, start):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get git log messages from a repository.')
-    parser.add_argument('repo_path', type=str, help='Path to the git repository')
     parser.add_argument('start', type=str, help='commit or tag that marks the beginning of the release')
     parser.add_argument('--debug', action='store_true', help='print out debug statments')
-    parser.add_argument('-n', '--debug_pr_num', type=str, help='dump contents for this PR Id')
-    parser.add_argument('--oneline',action='store_true', help='format as a single line of text')
+    parser.add_argument('--debug_pr_num', '-n', type=str, help='dump contents for this PR Id')
+    parser.add_argument('--oneline', action='store_true', help='format as a single line of text')
+    parser.add_argument('--useage', '-u', action='store_true', help='print useage')
 
     args = parser.parse_args()
+
+    if args.useage:
+        print(useage())
+        exit()
+
     if args.debug:
         DEBUG=True
     else:
         DEBUG=False
 
-    messages = get_git_log_messages(args.repo_path,args.start)
+    messages = get_git_log_messages(".",args.start)
     pattern = re.compile(r"^commit\s+\w+", re.MULTILINE)
     result = pattern.finditer(messages)
 
