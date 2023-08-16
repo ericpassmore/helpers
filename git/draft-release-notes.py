@@ -131,10 +131,17 @@ class GH_PullRequest:
     def search_issues(self, body):
         issues = []
         # search for keywords
-        search_keywords = '[close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved]'
-        git_issue_pattern = re.compile(r''+search_keywords+'\s+#(\d+)', re.IGNORECASE)
-        for i in re.findall(git_issue_pattern, body):
-            issues.append(i)
+        # The (?:   ) is a non-matching group
+        # This return a tuple for each keyword found matching both short and long formats
+        #  - first tuple #XXXX
+        #  - second tuple https://github.com/org/repo/XXXX
+        search_keywords = '(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)'
+        git_issue_pattern = re.compile(r''+search_keywords+'\s+(?:#(\d+)|https?://\S+/(\d+))', re.IGNORECASE)
+        for tuple_i in re.findall(git_issue_pattern, body):
+            # loop over pos 0 and pos 1
+            for pos in range(0, 2):
+                if len(tuple_i[pos]) > 0:
+                    issues.append(tuple_i[pos])
         return issues
 
     def as_oneline(self):

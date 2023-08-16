@@ -1,0 +1,46 @@
+{
+  "author": {
+    "id": "MDQ6VXNlcjM5MzMyMTk=",
+    "is_bot": false,
+    "login": "huangminghuang",
+    "name": "Huang-Ming Huang"
+  },
+  "body": "Body: * Fixes the import failure for platform which doesn't support unshare.\r\n* Make sure that SHiP continues to send until the send queue is drained.\r\n\r\nresolve #888\r\n\r\nResolves https://github.com/AntelopeIO/leap/issues/889\r\n\r\nMerges PR #111 & #222 into main\r\n\r\nFixes #890 #891\r\n",
+  "comments": [],
+  "isDraft": false,
+  "milestone": null,
+  "number": 877,
+  "reviews": [
+    {
+      "id": "PRR_kwDOHzTiM85QwNXI",
+      "author": {
+        "login": "heifner"
+      },
+      "authorAssociation": "MEMBER",
+      "body": "",
+      "submittedAt": "2023-03-23T14:50:56Z",
+      "includesCreatedEdit": false,
+      "reactionGroups": [],
+      "state": "APPROVED",
+      "commit": {
+        "oid": "6176fa323c462f7f163ccab0c1331ec0e566af37"
+      }
+    },
+    {
+      "id": "PRR_kwDOHzTiM85QwN30",
+      "author": {
+        "login": "linh2931"
+      },
+      "authorAssociation": "MEMBER",
+      "body": "",
+      "submittedAt": "2023-03-23T14:51:54Z",
+      "includesCreatedEdit": false,
+      "reactionGroups": [],
+      "state": "APPROVED",
+      "commit": {
+        "oid": "6176fa323c462f7f163ccab0c1331ec0e566af37"
+      }
+    }
+  ],
+  "title": "[4.0->main] unshare import fix & SHiP: Send until queue is empty"
+}
