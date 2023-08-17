@@ -15,6 +15,43 @@ def useage():
 
     return message
 
+def git_repo_name():
+    command = ['git', 'remote', 'get-url', 'origin']
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        raise Exception('Error executing command: {}\n{}'.format(command, result.stderr))
+    paths = result.stdout.split('/')
+    # strip off end of line
+    return (paths[3] + "/" + paths[4]).strip()
+
+
+def styling():
+    css = "<style>\n"
+    css += "/* Style the collapsible content. Note: hidden by default */\n"
+    css += ".textblock { padding: 0 18px; background-color: #f1f1f1; width: 80%; transition: all .3s ease;}\n"
+    css += "</style>\n"
+    return css
+
+def javascript():
+    return ""
+
+def start_doc(html=False):
+    # only applies to html, skip in all other cases
+    if not html:
+        return ""
+
+    js = javascript()
+    css = styling()
+    return "<!DOCTYPE html>\n<html><head>"+js+css+"</head><body>\n"
+
+def end_doc(html=False):
+    # only applies to html, skip in all other cases
+    if not html:
+        return ""
+
+    return "\n</body></html>\n"
+
 #
 # Class to hold information on git merge
 # members
@@ -105,7 +142,9 @@ class GitMerge:
 # comments
 # approvers
 class GH_PullRequest:
-    def __init__(self, pr_number):
+    def __init__(self, pr_number, git_repo_path):
+        self.git_repo_path = git_repo_path
+        # get pr and parse json response
         pull_request_details = json.loads(self.get_gh_pr(pr_number))
         self.author = pull_request_details["author"]["login"]
         self.body = pull_request_details["body"]
@@ -144,25 +183,47 @@ class GH_PullRequest:
         # search for keywords
         # The (?:   ) is a non-matching group
         # This return a tuple for each keyword found matching both short and long formats
-        #  - first tuple #XXXX
-        #  - second tuple https://github.com/org/repo/XXXX
+        #  - first tuple matches #XXXX
+        #  - second tuple matches https://github.com/org/repo/XXXX
         search_keywords = '(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)'
-        git_issue_pattern = re.compile(r''+search_keywords+'\s+(?:#(\d+)|https?://\S+/(\d+))', re.IGNORECASE)
+        git_issue_pattern = re.compile(r''+search_keywords+'\s+(?:#(\d+)|(https?://\S+/\d+))', re.IGNORECASE)
         for tuple_i in re.findall(git_issue_pattern, body):
-            # loop over pos 0 and pos 1
             for pos in range(0, 2):
                 if len(tuple_i[pos]) > 0:
-                    issues.append(tuple_i[pos])
+                    if not tuple_i[pos].startswith('http'):
+                        # can't reasign tuple so we need temp variable
+                        url = 'https://github.com/' + self.git_repo_path + '/issues/' + tuple_i[pos]
+                        issues.append(url)
+                    else:
+                        issues.append(tuple_i[pos])
         return issues
 
     def as_oneline(self):
         author = f" Author: {self.author}"
-        milestone = f" Milestone: {self.milestone}"
         pr_num = f"PR Num: {self.prnum}"
-        title  = f" Title: {self.title[0:40]}"
+        title  = f" Title: {self.title[0:55]}"
         approvers = f" Approvers: {', '.join(self.approvers)}"
-        issues = f" Issues: {', '.join(self.issues)}"
-        return pr_num + author + milestone + approvers + issues + title
+        # strip down to ids
+        issue_ids = list(map(lambda n: n.split('/')[-1], self.issues))
+        issues = f" Issues: {', '.join(issue_ids)}"
+
+        return pr_num + author + approvers + issues + title
+
+    def as_html(self):
+        base_url = f"https://github.com/{self.git_repo_path}"
+        author = f"<p>Author: {self.author}</p>\n"
+        linked_title  = f"<h2><a href=\"{base_url}/pull/{self.prnum}\">{self.title[0:55]}</a></h2>\n"
+        approvers = f"<p>Approvers: {', '.join(self.approvers)}</p>\n"
+        body = f"<div class=\"textblock\">Body: {self.body}</div>\n"
+        issues = f"Issues:\n"
+        if len(self.issues) > 0:
+            issues += "<ul>\n"
+            for i in self.issues:
+                issues += f"<li><a href=\"{i}\">{i}</a></li>\n"
+            issues += "</ul>\n"
+        sep = f"<hr width=\"50%\" size=\"3px\" align=\"center\"/>"
+
+        return linked_title + author + approvers + issues + body + sep
 
     def __str__(self):
         author = f"Author: {self.author}\n"
@@ -191,28 +252,36 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true', help='print out debug statments')
     parser.add_argument('--debug_pr_num', '-n', type=str, help='dump contents for this PR Id')
     parser.add_argument('--oneline', action='store_true', help='format as a single line of text')
+    parser.add_argument('--html', action='store_true', help='format as html for the web')
     parser.add_argument('--useage', '-u', action='store_true', help='print useage')
 
     args = parser.parse_args()
 
+    # print useage, documentation on useage
     if args.useage:
         print(useage())
         exit()
 
+    # prefer the look of DEBUG to args.debug
     if args.debug:
         DEBUG=True
     else:
         DEBUG=False
 
+    # owner/repo parsed from .gitconfig origin url
+    git_repo_name = git_repo_name()
+    # get all the first parent merge requests to branch
     messages = get_git_log_messages(".",args.start)
+    # split the string into an array of commits
     pattern = re.compile(r"^commit\s+\w+", re.MULTILINE)
-    result = pattern.finditer(messages)
+    commit_boundry = pattern.finditer(messages)
 
+    # init some arrays
     start_positions = []
     merges = []
 
     # iterate through matches calculating the start and end of blocks
-    for match in result:
+    for match in commit_boundry:
         start, end = match.span()
         start_positions.append(start)
 
@@ -225,24 +294,37 @@ if __name__ == '__main__':
         if end > 0:
             if DEBUG:
                 print(f"Text Block {start} to {end-1}")
+            # Create an array of GitMerge objects
+            # GitMerge object has properites with the commit log data
             merges.append(GitMerge(messages[start:end]))
         # last block's end is new block's start
         start = end
 
     if DEBUG:
         print(f"Gathering Issues Details using gh pr view")
+    # print document header
+    print(start_doc(args.html))
     for item in merges:
+        # shows work getting done, otherwise you question the silence
         if DEBUG:
             print(".")
-        pr_details = GH_PullRequest(item.prnumber)
+        # Create an object from the Git PR data
+        pr_details = GH_PullRequest(item.prnumber, git_repo_name)
+
         # DEBUG print out full details
         if DEBUG == True and item.prnumber == args.debug_pr_num:
             print(f'\n***** MERGE FROM GIT LOG ******')
             print(item)
             print(f'***** PR DETAILS FROM GH ******')
             print(pr_details)
-        #if len(pr_details.issues) > 0:
+
+        # different formate options delegated to object
         if args.oneline:
             print(pr_details.as_oneline())
+        elif args.html:
+            print(pr_details.as_html())
         else:
             print(pr_details)
+
+    # print document footer
+    print(end_doc(args.html))
