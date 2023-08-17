@@ -10,8 +10,9 @@ def useage():
     message += "Additional requirements: must have git installed and gh cli installed.\n"
     message += "    See https://github.com/cli/cli and https://git-scm.com/book/en/v2/Getting-Started-Installing-Git\n\n"
     message += "Platforms: This script has been tested on ubunut linux with python3\n"
-    message += "  - for a summary use the --oneline argument\n"
-    message += "  - to print this useage try the --useage argument\n"
+    message += "  - for a summary use the --oneline option\n"
+    message += "  - for a html summary user the --html option\n"
+    message += "  - to print this useage try the --useage option\n"
 
     return message
 
@@ -185,7 +186,7 @@ class GH_PullRequest:
         # This return a tuple for each keyword found matching both short and long formats
         #  - first tuple matches #XXXX
         #  - second tuple matches https://github.com/org/repo/XXXX
-        search_keywords = '(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)'
+        search_keywords = '(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|resovles)'
         git_issue_pattern = re.compile(r''+search_keywords+'\s+(?:#(\d+)|(https?://\S+/\d+))', re.IGNORECASE)
         for tuple_i in re.findall(git_issue_pattern, body):
             for pos in range(0, 2):
