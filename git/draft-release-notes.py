@@ -210,10 +210,15 @@ class GH_PullRequest:
 
         return pr_num + author + approvers + issues + title
 
-    def as_html(self):
+    def as_html(self, newafter):
+        newtag = ""
+        if newafter > 0 and self.prnum > newafter:
+            newtag = "<font color='red'> NEW </font>"
+
         base_url = f"https://github.com/{self.git_repo_path}"
         author = f"<p>Author: {self.author}</p>\n"
-        linked_title  = f"<h2><a href=\"{base_url}/pull/{self.prnum}\">{self.title[0:55]}</a></h2>\n"
+
+        linked_title  = f"<h2>{newtag}<a href=\"{base_url}/pull/{self.prnum}\">{self.title[0:55]}</a></h2>\n"
         approvers = f"<p>Approvers: {', '.join(self.approvers)}</p>\n"
         body = f"<div class=\"textblock\">Body: {self.body}</div>\n"
         issues = f"Issues:\n"
@@ -252,6 +257,7 @@ if __name__ == '__main__':
     parser.add_argument('start', type=str, help='commit or tag that marks the beginning of the release')
     parser.add_argument('--debug', action='store_true', help='print out debug statments')
     parser.add_argument('--debug_pr_num', '-n', type=str, help='dump contents for this PR Id')
+    parser.add_argument('--newafter', '-a', type=str, help='Only for HTML Reports: Tag later PRs with New')
     parser.add_argument('--oneline', action='store_true', help='format as a single line of text')
     parser.add_argument('--html', action='store_true', help='format as html for the web')
     parser.add_argument('--useage', '-u', action='store_true', help='print useage')
@@ -323,7 +329,10 @@ if __name__ == '__main__':
         if args.oneline:
             print(pr_details.as_oneline())
         elif args.html:
-            print(pr_details.as_html())
+            newafter = 0
+            if args.newafter:
+                newafter = int(args.newafter)
+            print(pr_details.as_html(newafter))
         else:
             print(pr_details)
 
