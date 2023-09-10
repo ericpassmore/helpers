@@ -2,6 +2,7 @@
 
 SNAPSHOT=$1
 
+TYPE="READONLY"
 TUID=$(id -ur)
 
 # must note be root to run
@@ -30,6 +31,9 @@ if [ -f "${DATA_DIR}"/state/shared_memory.bin ]; then
   exit 1
 fi
 
-nodeos --snapshot "${DATA_DIR}"/snapshots/"${SNAPSHOT}" --data-dir "$DATA_DIR" --wasm-runtime eos-vm --chain-state-db-size-mb 65536 --http-server-address 0.0.0.0:8080 --state-history-endpoint 0.0.0.0:8080 --agent-name "Eric Latest Nodeos" --producer-name eosio --plugin eosio::chain_api_plugin --plugin eosio::http_plugin --plugin eosio::producer_plugin --plugin eosio::state_history_plugin --plugin eosio::net_plugin --plugin eosio::producer_api_plugin --plugin eosio::net_api_plugin --disable-replay-opts --contracts-console &
-
+if [ "$TYPE" == "PRODUCER" ]; then
+	nodeos --snapshot "${DATA_DIR}"/snapshots/"${SNAPSHOT}" --data-dir "$DATA_DIR" --wasm-runtime eos-vm --chain-state-db-size-mb 65536 --http-server-address 0.0.0.0:8888 --state-history-endpoint 0.0.0.0:8080 --agent-name "Eric Latest Nodeos" --producer-name eosio --plugin eosio::chain_api_plugin --plugin eosio::http_plugin --plugin eosio::producer_plugin --plugin eosio::state_history_plugin --plugin eosio::net_plugin --plugin eosio::producer_api_plugin --plugin eosio::net_api_plugin --disable-replay-opts --contracts-console &
+else 
+	nodeos --snapshot "${DATA_DIR}"/snapshots/"${SNAPSHOT}" --data-dir "$DATA_DIR" --wasm-runtime eos-vm --chain-state-db-size-mb 65536 --http-server-address 0.0.0.0:8888 --state-history-endpoint 0.0.0.0:8080 --agent-name "Eric Latest Nodeos" --plugin eosio::http_plugin --plugin eosio::state_history_plugin --plugin eosio::net_plugin --plugin eosio::net_api_plugin --disable-replay-opts --contracts-console &
+fi
 echo "Restored from Snapshot: now kill and restart"
