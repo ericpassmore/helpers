@@ -2,32 +2,25 @@
 curl --data-binary '{"protocol_features_to_activate":["0ec7e080177b2c02b278d5088611686b49d739925a92d9bfcacd7fc6b74053bd"]}' http://127.0.0.1:8888/v1/producer/schedule_protocol_feature_activations
 sleep 1;
 
-cleos set code eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.boot/eosio.boot.wasm
-cleos set abi eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.boot/eosio.boot.abi
+curl --data-binary '{"protocol_features_to_activate":["0ec7e080177b2c02b278d5088611686b49d739925a92d9bfcacd7fc6b74053bd"]}' http://127.0.0.1:8888/v1/producer/schedule_protocol_feature_activations
 sleep 1;
-
-cleos set code eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.msig/eosio.msig.wasm
-cleos set abi eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.msig/eosio.msig.abi
+cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.boot
 sleep 1;
-
-cleos set code eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.bios/eosio.bios.wasm
-cleos set abi eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.bios/eosio.bios.abi
+cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.msig
 sleep 1;
-
-cleos set code eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.system/eosio.system.wasm
-cleos set abi eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.system/eosio.system.abi
+cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.bios
 sleep 1;
-
-cleos set code eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.wrap/eosio.wrap.wasm
-cleos set abi eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.wrap/eosio.wrap.abi
+cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.system/
+sleep 1;
+cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.wrap
 sleep 1;
 
 # cd /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/readonly_contract/
 # mkdir build && cd build
 # cdt-cpp -abigen ../contract.cpp -o mycontract.wasm -I ../include
-cleos set code hokieshokies /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/readonly_contract/build/mycontract.wasm
-cleos set abi hokieshokies /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/readonly_contract/build/mycontract.abi
-sleep 1;
+#cleos set code hokieshokies /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/readonly_contract/build/mycontract.wasm
+#cleos set abi hokieshokies /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/readonly_contract/build/mycontract.abi
+
 echo KV_DATABASE
 cleos push action eosio activate '["825ee6288fb1373eab1b5187ec2f04f6eacb39cb3a97f356a07c91622dd61d16"]' -p eosio
 
@@ -75,4 +68,3 @@ cleos push action eosio activate '["4fca8bd82bbd181e714e283f83e1b45d95ca5af40fb8
 
 echo WTMSIG_BLOCK_SIGNATURES
 cleos push action eosio activate '["299dcb6af692324b899b39f16d5a530a33062804e41f09dc97e9f156b4476707"]' -p eosio
-
