@@ -1,0 +1,10 @@
+ROOT_DIR=/local/eosnetworkfoundation
+LEAP_GIT_DIR="${ROOT_DIR}"/downloads/leap
+LEAP_BUILD_DIR="${ROOT_DIR}"/leap_build
+TEMPLATE_DIR="${ROOT_DIR}"/config
+NODEOS_RUN_DIR=/bigata1/eosio/nodeos
+CONFIG_DIR="${NODEOS_RUN_DIR}"/config
+DATA_DIR="${NODEOS_RUN_DIR}"/data
+LOG_ROOT_DIR="/bigata1"
+LOG_DIR="${LOG_ROOT_DIR}"/log
+WALLET_DIR="${HOME}/eosio-wallet"

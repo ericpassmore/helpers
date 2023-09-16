@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 START=$(date +%s.%N)
 NPROC=8
 TUID=$(id -ur)
@@ -26,10 +28,10 @@ git pull
 git submodule update --init --recursive
 
 [ ! -d "$LEAP_BUILD_DIR" ] && mkdir -p "$LEAP_BUILD_DIR"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 "$LEAP_BUILD_DIR" >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
-cd "$LEAP_BUILD_DIR" || exit
+cd "${LEAP_BUILD_DIR:?}" || exit
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 "$LEAP_GIT_DIR" >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
 make -j "${NPROC}" package >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
 END=$(date +%s.%N)
 
 WALL_CLOCK_SEC=$(echo $END - $START | bc)
-echo "${TODAY} NODEOS BUILD TOOK ${WALL_CLOCK_SEC} secs with PROC ${NPROC} ${TEMPS}" >> "$LOG_DIR"/nodeos_nightly_build_times.log 
+echo "${TODAY} NODEOS BUILD TOOK ${WALL_CLOCK_SEC} secs with PROC ${NPROC} ${TEMPS}" >> "$LOG_DIR"/nodeos_nightly_build_times.log

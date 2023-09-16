@@ -2,17 +2,17 @@
 curl --data-binary '{"protocol_features_to_activate":["0ec7e080177b2c02b278d5088611686b49d739925a92d9bfcacd7fc6b74053bd"]}' http://127.0.0.1:8888/v1/producer/schedule_protocol_feature_activations
 sleep 1;
 
-curl --data-binary '{"protocol_features_to_activate":["0ec7e080177b2c02b278d5088611686b49d739925a92d9bfcacd7fc6b74053bd"]}' http://127.0.0.1:8888/v1/producer/schedule_protocol_feature_activations
+CONTRACT_DIR="/local/eosnetworkfoundation/repos/antelope/reference-contracts/build/contracts"
+
+cleos set contract eosio "$CONTRACT_DIR"/eosio.boot
 sleep 1;
-cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.boot
+cleos set contract eosio "$CONTRACT_DIR"/eosio.msig
 sleep 1;
-cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.msig
+cleos set contract eosio "$CONTRACT_DIR"/eosio.bios
 sleep 1;
-cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.bios
+cleos set contract eosio "$CONTRACT_DIR"/eosio.system
 sleep 1;
-cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.system/
-sleep 1;
-cleos set contract eosio /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/build/contracts/eosio.wrap
+cleos set contract eosio "$CONTRACT_DIR"/eosio.wrap
 sleep 1;
 
 # cd /local/eosnetworkfoundation/repos/ENF/eos-system-contracts/readonly_contract/
