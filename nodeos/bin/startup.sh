@@ -28,7 +28,7 @@ fi
 
 if [ "$DIRTY" == "Y" ]; then
   # hard replay
-  nodeos --hard-replay --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" --disable-replay-opts --contracts-console >> "$LOG_DIR"/nodeos-eric-test.log 2>&1
+  nodeos --hard-replay --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" >> "$LOG_DIR"/nodeos.log 2>&1
 else
-  nodeos --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" --disable-replay-opts --contracts-console >> "$LOG_DIR"/nodeos-eric-test.log 2>&1
+  nodeos --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR" >> "$LOG_DIR"/nodeos.log 2>&1
 fi

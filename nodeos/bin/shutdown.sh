@@ -27,4 +27,5 @@ if [ -n "$PID" ]; then
 fi
 # clean out old logs
 find "${LOG_DIR:?}" -mtime +14 | xargs /bin/rm -rf
-cp /dev/null "$LOG_DIR"/nodeos-eric-test.log
+tail -20 "$LOG_DIR"/nodeos.log > /tmp/end.log
+rm "$LOG_DIR"/nodeos.log && mv /tmp/end.log "$LOG_DIR"/nodeos.log

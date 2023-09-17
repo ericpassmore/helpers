@@ -17,9 +17,13 @@ if [ -z "$CHECK" ]; then
 else
   echo "**** NODES OK"
 fi
-echo "**** TESTING"
-grep fail "$LOG_DIR"/nodeos_*"${TODAY}".log
-echo "**** BLOCK IDS"
+if [ -f "$LOG_DIR"/nodeos_nightly_test_"${TODAY}".log ]; then
+  echo "**** CHECK TEST LOGS"
+  grep fail "$LOG_DIR"/nodeos_nightly_test_"${TODAY}".log
+else
+  echo "**** No Test Logs for ${TODAY}"
+fi
+echo "**** LIB BLOCK IDS"
 curl -s -X POST http://127.0.0.1:8888/v1/chain/get_info | cut -d, -f4
 sleep 2
 curl -s -X POST http://127.0.0.1:8888/v1/chain/get_info | cut -d, -f4

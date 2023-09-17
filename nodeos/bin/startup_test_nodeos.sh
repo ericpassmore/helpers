@@ -6,11 +6,11 @@
 start_nodeos() {
   ## Create Config with Production Keys
   if [ "$1" == "PRODUCER" ]; then
-    sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "${ROOT_DIR}"/bin/config/test-producer-config.ini \
+    sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "${ROOT_DIR}"/config/test-producer-config.ini \
        | sed "s/EOSRootPrivateKey/$EOSRootPrivateKey/" > "${CONFIG_DIR}"/config.ini
   fi
   if [ "$1" == "READONLY" ]; then
-    sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "${ROOT_DIR}"/bin/config/test-readonly-config.ini \
+    sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "${ROOT_DIR}"/config/test-readonly-config.ini \
        | sed "s/EOSRootPrivateKey/$EOSRootPrivateKey/" > "${CONFIG_DIR}"/config.ini
   fi
   ## Startup
