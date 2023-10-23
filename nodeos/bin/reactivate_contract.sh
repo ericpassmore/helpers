@@ -74,6 +74,14 @@ cleos push action eosio activate '["35c2186cc36f7bb4aeaf4487b36e57039ccf45a9136a
 echo CRYPTO_PRIMITIVES *
 cleos push action eosio activate '["6bcb40a24e49c26d0a60513b6aeb8551d264e4717f306b81a37a5afb3b47cedc"]' -p eosio@active
 
+# DISABLE_DEFERRED_TRXS_STAGE_1 - DISALLOW NEW DEFERRED TRANSACTIONS
+cleos push action eosio activate '["fce57d2331667353a0eac6b4209b67b843a7262a848af0a49a6e2fa9f6584eb4"]' -p eosio@active
+
+# DISABLE_DEFERRED_TRXS_STAGE_2 - PREVENT PREVIOUSLY SCHEDULED DEFERRED TRANSACTIONS FROM REACHING OTHER NODE
+# THIS DEPENDS ON DISABLE_DEFERRED_TRXS_STAGE_1 
+cleos push action eosio activate '["09e86cb0accf8d81c9e85d34bea4b925ae936626d00c984e4691186891f5bc16"]' -p eosio@active
+
+
 sleep 2;
 
 #cleos set contract eosio "$CONTRACT_DIR"/eosio.msig
