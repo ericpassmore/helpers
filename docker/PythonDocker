@@ -1,0 +1,22 @@
+FROM ubuntu:22.04
+RUN apt-get -y update && apt-get install -y  \
+        cmake             \
+        git               \
+	      curl              \
+        python3           \
+        python3-pip       \
+        time
+RUN python3 -m pip install pygments
+RUN mkdir -p /local/eosnetworkfoundation
+RUN mkdir -p /bigata1/log
+RUN mkdir -p /bigata1/eosio/nodeos
+RUN chmod 777 /local/eosnetworkfoundation
+RUN chmod 777 /bigata1/log
+RUN chmod 777 /bigata1/eosio/nodeos
+RUN echo 'root:Docker!' | chpasswd
+RUN useradd -ms /bin/bash enfuser
+USER enfuser
+WORKDIR /local/eosnetworkfoundation
+RUN mkdir /local/eosnetworkfoundation/deb
+RUN mkdir /local/eosnetworkfoundation/repos
+WORKDIR /local/eosnetworkfoundation/
