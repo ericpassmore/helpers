@@ -1,0 +1,42 @@
+# Renew start line 245 and 246 firewall then run renew
+Install certbox for debian using snap for 22.04
+   101 sudo snap install core; sudo snap refresh core
+   102 sudo apt remove certbot
+   103 sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+FIRST edit the configuration and update "server_name" with the domains
+Example server_name example.com www.example.com;
+
+Make sure CertBot can reach the directories it needs to reach
+        # CERT BOT RENEWALL CONFIGS NOT SURE IF WE NEED BOTH
+        location ~ /.well-known {
+            allow all;
+            root /var/www/html;
+        }
+        location /.well-known/acme-challenge/ {
+           root /var/www/html;
+        }
+
+NOTE: Certbot only works on http port 80 and ssl port 443
+  242  sudo vi /etc/nginx/sites-available/passmore.xyz.sites
+
+Test out eh new config
+  243  sudo nginx -t
+
+Reload new config
+  244  sudo systemctl reload nginx
+
+Double check firewall open for 80 and 443
+# sudo ufw allow proto tcp from any to any port 80,443
+# update firewall port 80 on gateway as well
+  245  # sudo ufw status
+       sudo ufw allow proto tcp from any to any port 80,443
+
+Generate certs for our domain
+  246  # sudo certbot --nginx -d passmore.xyz -d www.passmore.xyz
+       sudo certbot --nginx -d bitwarden.passmore.xyz
+
+
+Close off firewall
+  248 sudo ufw delete 5
+      sudo ufw delete 4
