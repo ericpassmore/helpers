@@ -2,6 +2,7 @@
 
 BRANCH=${1:-release/5.0}
 
+TUID=$(id -ur)
 # must not be root to run
 if [ "$TUID" -eq 0 ]; then
   echo "Trying to run as root user exiting"
