@@ -14,8 +14,6 @@ def api_headers(token):
         'Authorization': "Bearer "+token
     }
 
-# https://api.github.com/repos/AntelopeIO/leap/actions/runs?event=pull_request&head_sha=3cbf05f0ae553c3ebfc7f943abf4e786482ac5bf
-
 def get_pr_list(branch, token):
     """Search PRs on a given branch
     and pull out the id for the most recent"""
