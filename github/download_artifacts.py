@@ -3,6 +3,7 @@ import argparse
 import json
 import logging
 from datetime import datetime
+from collections import OrderedDict
 import requests
 
 @staticmethod
@@ -14,16 +15,17 @@ def api_headers(token):
         'Authorization': "Bearer "+token
     }
 
-def get_latest_build_action(action, branch, token):
-    """Search through workflow
-    by looking at PRs on a given branch
-    and pull out the id for the most recent action"""
-    # this will store the record for the most recent action
-    latest_action = {}
+# https://api.github.com/repos/AntelopeIO/leap/actions/runs?event=pull_request&head_sha=3cbf05f0ae553c3ebfc7f943abf4e786482ac5bf
+
+def get_pr_list(branch, token):
+    """Search PRs on a given branch
+    and pull out the id for the most recent"""
+    # this will store the record for the most recent pr
+    pr_list = {}
     # set url
-    url='https://api.github.com/repos/AntelopeIO/leap/actions/runs'
+    url='https://api.github.com/repos/AntelopeIO/leap/pulls'
     # set params
-    params = {'branch': branch, 'event': 'pull_request'}
+    params = {'base': branch, 'state': 'closed'}
 
     # API Request
     query_pull_requests = requests.get(url,
@@ -33,6 +35,53 @@ def get_latest_build_action(action, branch, token):
 
     if query_pull_requests.status_code == 200:
         root_json = query_pull_requests.content.decode('utf-8')
+        root = json.loads(root_json)
+
+        for record in root:
+            # if not merged skip to next
+            if not record['merged_at']:
+                continue
+
+            merge_record = {
+                "internal_id": record['id'],
+                "title": record['title'],
+                "number": record['number'],
+                "head_branch": record['head']['ref'],
+                "merge_sha": record['merge_commit_sha'],
+                "head_sha": record['head']['sha']
+            }
+            merge_time = datetime.strptime(record['merged_at'], '%Y-%m-%dT%H:%M:%SZ')
+
+            # no drafts and succesfully merged
+            if record['draft'] != "false":
+                logging.debug('id: %i matching record %s with pr# %i merge time %s',
+                    merge_record['internal_id'], merge_record['title'], merge_record['number'], merge_time)
+
+                # build list of actions
+                pr_list[merge_time] = merge_record
+
+    # return sorted list
+    return OrderedDict(pr_list)
+
+def get_latest_build_action(action, head_sha, token):
+    """Search through workflow
+    by looking head sha for all pull requests
+    look for the most recent action"""
+    # this will store the record for the most recent action
+    latest_action = {}
+    # set url
+    url='https://api.github.com/repos/AntelopeIO/leap/actions/runs'
+    # set params
+    params = {'head_sha': head_sha, 'event': 'pull_request'}
+
+    # API Request
+    query_runs = requests.get(url,
+            params=params,
+            headers=api_headers(token),
+            timeout=10)
+
+    if query_runs.status_code == 200:
+        root_json = query_runs.content.decode('utf-8')
         root = json.loads(root_json)
 
         for record in root['workflow_runs']:
@@ -110,6 +159,12 @@ if __name__ == '__main__':
 and returns the associated git commit""")
     parser.add_argument('--branch', type=str, default='release/5.0', help='branch to get latest artifact')
     parser.add_argument('--download-dir', type=str, default='.', help='director to download into')
+    parser.add_argument('--select-pr', action=argparse.BooleanOptionalAction, \
+        default=False, help='select pr and filter by that pr\'s commit')
+    parser.add_argument('--stop-after-prs', action=argparse.BooleanOptionalAction, \
+        default=False, help='optional: prints PRs and then stops')
+    parser.add_argument('--pr-search-length', type=int, \
+        default=10, help='number of prs to search back default 10')
     parser.add_argument('--bearer-token', type=str, help="""github bearer token to access github api
     see https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens""")
     parser.add_argument('--debug', action=argparse.BooleanOptionalAction, \
@@ -124,20 +179,63 @@ and returns the associated git commit""")
     else:
         logging.basicConfig(level=logging.ERROR)
 
-    # Step 1. Query the workflows for the branch and event you want
-    # Iterate over "workflow_runs" look for name = "Build & Test".
-    # return matching action with the latest updated date
-    logging.info("Step 1: query workflows for %s branch and action %s", {args.branch}, {BUILD_TEST_ACTION})
-    most_recent_action = get_latest_build_action(BUILD_TEST_ACTION, args.branch, args.bearer_token)
-    if not most_recent_action:
+    # Step 1. Query the prs for the branch we are interested in
+    # return matching PR with the latest updated date
+    logging.info("Step 1: query for latest PR on %s branch", {args.branch})
+    recent_prs = get_pr_list(args.branch, args.bearer_token)
+    if not recent_prs:
         logging.error("Step 1: failed could not find any matches for action on branch")
+        exit()
+
+    # if desired print PRs
+    # if stop_after_prs then exit otherwise break loop and continue with Step 2.
+    if args.stop_after_prs or args.select_pr:
+        stop_limit = args.pr_search_length
+        for time_of_merge, pr_rec in recent_prs.items():
+            logging.debug("stop limit for printing prs at %i", stop_limit)
+            if stop_limit <= 0:
+                if args.stop_after_prs:
+                    exit()
+                else:
+                    break
+            format_time = time_of_merge.strftime("%b %d %Y %I%p")
+            print(f"[{args.pr_search_length-stop_limit+1}] PR {pr_rec['number']} {pr_rec['title']}")
+            print(f"\t\tMerge time {format_time}")
+            print(f"\t\tSHA {pr_rec['merge_sha']}")
+            stop_limit=stop_limit-1
+    # if selecting a PR get the number
+    print("Please Select a PR >>", end="")
+    pr_index = int(input())
+
+    # Step 2. Query workflow runs to find the latest Build & Test Action
+    selected_pr = {}
+    for item in recent_prs.values():
+        pr_index = pr_index - 1
+        selected_pr = item
+        # select by index
+        if args.select_pr:
+            if pr_index == 0:
+                break
+        # select most recent
+        else:
+            break
+    logging.info("Step 2: Select PR %i query workflows for %s sha and action %s",
+        selected_pr['number'],
+        {selected_pr['head_sha']},
+        {BUILD_TEST_ACTION}
+    )
+    most_recent_action = get_latest_build_action(BUILD_TEST_ACTION,
+        selected_pr['head_sha'],
+        args.bearer_token
+    )
+    if not most_recent_action:
+        logging.error("Step 2: failed could not find any matches for action on branch")
         exit()
     logging.debug(most_recent_action)
 
-
-    # Step 2. Get all the artifact from workflow
+    # Step 3. Get all the artifacts from workflow
     # iterate over list "artifacts" look for name = "leap-deb-amd64" and return "id" and "archive_download_url"
-    logging.info("Step 2: query for artifact %s", ARTIFACT)
+    logging.info("Step 3: query for artifact %s", ARTIFACT)
     artifact = get_deb_download_url(most_recent_action['id'],
         ARTIFACT,
         args.bearer_token)
@@ -150,8 +248,8 @@ and returns the associated git commit""")
     logging.debug(artifact)
 
 
-    # Step 3. download
-    logging.info("Step 3: download artifact to %s", args.download_dir)
+    # Step 4. download
+    logging.info("Step 4: download artifact to %s", args.download_dir)
     download_success = download_artifact(artifact['archive_download_url'],
         args.download_dir,
         ARTIFACT,
