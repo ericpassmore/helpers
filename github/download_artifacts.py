@@ -71,7 +71,7 @@ def get_latest_build_action(action, head_sha, token):
     # set url
     url='https://api.github.com/repos/AntelopeIO/leap/actions/runs'
     # set params
-    params = {'head_sha': head_sha, 'event': 'pull_request'}
+    params = {'head_sha': head_sha, 'event': 'push'}
 
     # API Request
     query_runs = requests.get(url,
@@ -220,11 +220,11 @@ and returns the associated git commit""")
             break
     logging.info("Step 2: Select PR %i query workflows for %s sha and action %s",
         selected_pr['number'],
-        {selected_pr['head_sha']},
+        {selected_pr['merge_sha']},
         {BUILD_TEST_ACTION}
     )
     most_recent_action = get_latest_build_action(BUILD_TEST_ACTION,
-        selected_pr['head_sha'],
+        selected_pr['merge_sha'],
         args.bearer_token
     )
     if not most_recent_action:
