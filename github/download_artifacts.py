@@ -3,7 +3,6 @@ import argparse
 import json
 import logging
 from datetime import datetime
-from collections import OrderedDict
 import requests
 
 @staticmethod
@@ -61,7 +60,7 @@ def get_pr_list(branch, token):
                 pr_list[merge_time] = merge_record
 
     # return sorted list
-    return OrderedDict(pr_list)
+    return dict(sorted(pr_list.items(), reverse=True))
 
 def get_latest_build_action(action, head_sha, token):
     """Search through workflow
