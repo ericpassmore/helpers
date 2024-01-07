@@ -197,7 +197,7 @@ def unzip_artifact(destination_dir, file_name, merge_sha):
 
     results = {
         "deb": full_file_listing,
-        "sha": merge_sha,
+        "gitcommitsha": merge_sha,
         "sha256sum": checksum
     }
 
