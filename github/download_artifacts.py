@@ -3,6 +3,9 @@ import argparse
 import json
 import logging
 from datetime import datetime
+import subprocess
+import os
+import re
 import requests
 
 @staticmethod
@@ -150,6 +153,56 @@ def download_artifact(url, destination_dir, file_name, token):
     # failed
     return False
 
+def unzip_artifact(destination_dir, file_name, merge_sha):
+    """unzip artifact and print out information on deb"""
+
+    destination_dir = destination_dir.strip("/")
+    zip_file = destination_dir+"/"+file_name
+    deb_file_pattern = re.compile('.*leap_[0-9].+_amd64.deb$')
+
+    # commands
+    unzip_cmd = ["unzip", zip_file]
+    rm_cmd = ["rm", zip_file]
+
+    # unzip
+    logging.info("running cmd %s", unzip_cmd)
+    unzip_result = subprocess.run(unzip_cmd, \
+        check=False, capture_output=True, text=True)
+    if unzip_result.returncode != 0:
+        logging.error("failed to unzip %s error %s", zip_file, unzip_result.stderr)
+        exit()
+
+    # rm zip after unzipping
+    logging.info("running cmd %s", rm_cmd)
+    rm_result = subprocess.run(rm_cmd, \
+        check=False, capture_output=True, text=True)
+    if rm_result.returncode != 0:
+        logging.error("failed to rm %s error %s", zip_file, rm_result.stderr)
+
+    # list to get exact file name
+    logging.info("running os list for  %s", destination_dir)
+    dir_list = os.listdir(destination_dir+"/")
+    logging.info("found matching files %s", dir_list)
+    file_list = [ s for s in dir_list if deb_file_pattern.match(s) ]
+    full_file_listing = file_list[0]
+
+    # checksum
+    checksum_cmd = ["sha256sum", destination_dir+"/"+full_file_listing]
+    logging.info("running cmd %s", checksum_cmd)
+    checksum_result = subprocess.run(checksum_cmd, \
+        check=False, capture_output=True, text=True)
+    if checksum_result.returncode != 0:
+        logging.error("failed to checksum %s error %s", full_file_listing, checksum_result.stderr)
+    checksum = checksum_result.stdout.split()[0]
+
+    results = {
+        "deb": full_file_listing,
+        "sha": merge_sha,
+        "sha256sum": checksum
+    }
+
+    return results
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="""Downloads latest leap artifact from a branch
@@ -200,18 +253,21 @@ and returns the associated git commit""")
             print(f"\t\tMerge time {format_time}")
             print(f"\t\tSHA {pr_rec['merge_sha']}")
             stop_limit=stop_limit-1
-    # if selecting a PR get the number
-    print("Please Select a PR >>", end="")
-    pr_index = int(input())
+
+    pr_index = 0
+    if args.select_pr:
+        # if selecting a PR get the number
+        print("Please Select a PR >>", end="")
+        pr_index = int(input())
 
     # Step 2. Query workflow runs to find the latest Build & Test Action
     selected_pr = {}
-    for item in recent_prs.values():
+    for run in recent_prs.values():
         pr_index = pr_index - 1
-        selected_pr = item
-        # select by index
+        selected_pr = run
+        # select by index trigger select if pr_index undefined or pr_index zero
         if args.select_pr:
-            if pr_index == 0:
+            if pr_index <= 0:
                 break
         # select most recent
         else:
@@ -254,4 +310,8 @@ and returns the associated git commit""")
     if not download_success:
         logging.error("Step 3. failed to download artifact")
         exit()
-    print(f"Download Complete corresponding commit: {most_recent_action['sha']}")
+    logging.info("Download Complete corresponding commit: %s", {most_recent_action['sha']})
+
+    # Step 5. Unzip, print summary results with checksum and commit sha
+    logging.info("Step 5: unzip downloaded archive")
+    print (unzip_artifact(args.download_dir, ARTIFACT, most_recent_action['sha']))
