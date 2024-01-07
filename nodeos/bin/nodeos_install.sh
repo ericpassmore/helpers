@@ -15,7 +15,7 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
-cd "${LEAP_BUILD_DIR:?}" || exit
+cd "${LEAP_BUILD_DIR:?}"/packages/ || exit
 
 DEBIAN_FRONTEND=noninteractive
 export DEBIAN_FRONTEND

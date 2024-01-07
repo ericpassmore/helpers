@@ -27,10 +27,9 @@ TODAY=$(date -u +%F)
 git pull
 git submodule update --init --recursive
 
-[ ! -d "$LEAP_BUILD_DIR" ] && mkdir -p "$LEAP_BUILD_DIR"
+[ ! -d "$LEAP_BUILD_DIR"/packages ] && mkdir -p "$LEAP_BUILD_DIR"/packages
 cd "${LEAP_BUILD_DIR:?}" || exit
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 "$LEAP_GIT_DIR" >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
-make -j "${NPROC}" package >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
+docker build -f "$LEAP_GIT_DIR"/tools/reproducible.Dockerfile -o "$LEAP_BUILD_DIR"/packages/ .
 END=$(date +%s.%N)
 
 WALL_CLOCK_SEC=$(echo $END - $START | bc)
