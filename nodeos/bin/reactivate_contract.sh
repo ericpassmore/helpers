@@ -78,9 +78,11 @@ cleos push action eosio activate '["6bcb40a24e49c26d0a60513b6aeb8551d264e4717f30
 cleos push action eosio activate '["fce57d2331667353a0eac6b4209b67b843a7262a848af0a49a6e2fa9f6584eb4"]' -p eosio@active
 
 # DISABLE_DEFERRED_TRXS_STAGE_2 - PREVENT PREVIOUSLY SCHEDULED DEFERRED TRANSACTIONS FROM REACHING OTHER NODE
-# THIS DEPENDS ON DISABLE_DEFERRED_TRXS_STAGE_1 
+# THIS DEPENDS ON DISABLE_DEFERRED_TRXS_STAGE_1
 cleos push action eosio activate '["09e86cb0accf8d81c9e85d34bea4b925ae936626d00c984e4691186891f5bc16"]' -p eosio@active
 
+# INSTANT_FINALITY
+cleos push action eosio activate '["8cb6dd1e5607208331eb5983141e159c75a597413887e80e8a9a4b715a507eb7"]' -p eosio@active
 
 sleep 2;
 
