@@ -29,7 +29,7 @@ git submodule update --init --recursive
 
 [ ! -d "$LEAP_BUILD_DIR"/packages ] && mkdir -p "$LEAP_BUILD_DIR"/packages
 cd "${LEAP_BUILD_DIR:?}" || exit
-docker build -f "$LEAP_GIT_DIR"/tools/reproducible.Dockerfile -o "$LEAP_BUILD_DIR"/packages/ .
+docker build -f "$LEAP_GIT_DIR"/tools/reproducible.Dockerfile -o "$LEAP_BUILD_DIR"/packages/ "$LEAP_GIT_DIR"
 END=$(date +%s.%N)
 
 WALL_CLOCK_SEC=$(echo $END - $START | bc)
