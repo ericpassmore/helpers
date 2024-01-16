@@ -3,7 +3,7 @@
 ##Run and Attach Container
 
 ```
-CONTAINER_NAME="chronicle"
+CONTAINER_NAME="UbuntuTestImg"
 docker pull ubuntu:jammy
 sudo docker volume create LEAP_PATCH
 # docker volume inspect LEAP_PATCH
