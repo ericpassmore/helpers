@@ -139,6 +139,14 @@ def download_artifact(url, destination_dir, file_name, token):
     """Download artifact"""
 
     file_path = f"{destination_dir}/{file_name}"
+
+    # replace file if it already exists, remove first
+    logging.info("checking for existing file %s, will rm if found", file_path)
+    try:
+        os.remove(file_path)
+    except FileNotFoundError:
+        pass
+
     # API Request
     download_request = requests.get(url,
             headers=api_headers(token),
@@ -156,15 +164,21 @@ def download_artifact(url, destination_dir, file_name, token):
 def unzip_artifact(destination_dir, file_name, merge_sha):
     """unzip artifact and print out information on deb"""
 
-    destination_dir = destination_dir.strip("/")
     zip_file = destination_dir+"/"+file_name
     deb_file_pattern = re.compile('.*leap_[0-9].+_amd64.deb$')
 
+    # replace file if it already exists, remove first
+    logging.info("cleaning out previous debs in dir %s", destination_dir)
+    clean_dir_list = os.listdir(destination_dir)
+    logging.info("found matching files %s", clean_dir_list)
+    clean_file_list = [ s for s in clean_dir_list if deb_file_pattern.match(s) ]
+    try:
+        os.remove(clean_file_list[0])
+    except FileNotFoundError:
+        pass
+
     # commands
     unzip_cmd = ["unzip", zip_file]
-    rm_cmd = ["rm", zip_file]
-
-    # unzip
     logging.info("running cmd %s", unzip_cmd)
     unzip_result = subprocess.run(unzip_cmd, \
         check=False, capture_output=True, text=True)
@@ -173,15 +187,12 @@ def unzip_artifact(destination_dir, file_name, merge_sha):
         exit()
 
     # rm zip after unzipping
-    logging.info("running cmd %s", rm_cmd)
-    rm_result = subprocess.run(rm_cmd, \
-        check=False, capture_output=True, text=True)
-    if rm_result.returncode != 0:
-        logging.error("failed to rm %s error %s", zip_file, rm_result.stderr)
+    logging.info("removing file %s", zip_file)
+    os.remove(zip_file)
 
     # list to get exact file name
     logging.info("running os list for  %s", destination_dir)
-    dir_list = os.listdir(destination_dir+"/")
+    dir_list = os.listdir(destination_dir)
     logging.info("found matching files %s", dir_list)
     file_list = [ s for s in dir_list if deb_file_pattern.match(s) ]
     full_file_listing = file_list[0]
@@ -313,5 +324,5 @@ and returns the associated git commit""")
     logging.info("Download Complete corresponding commit: %s", {most_recent_action['sha']})
 
     # Step 5. Unzip, print summary results with checksum and commit sha
-    logging.info("Step 5: unzip downloaded archive")
+    logging.info("Step 5: unzip downloaded archive to dir %s", args.download_dir)
     print (unzip_artifact(args.download_dir, ARTIFACT, most_recent_action['sha']))
