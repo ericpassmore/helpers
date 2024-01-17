@@ -80,9 +80,28 @@ if [ "$LOCAL_CHECKSUM" == "$CI_CHECKSUM" ]; then
   echo "checksums are equal you may sign"
   if [ $PARENT_SHELL == "tty" ]; then
      cd "${LEAP_BUILD_DIR:?}"/signed-outputs || exit
-     gpg --detach-sign --armor --default-key "${GIT_KEY}" "$LEAP_BUILD_DIR"/signed-outputs/local/leap_[0-9]*_amd64.deb 
+     gpg --detach-sign --armor --default-key "${GIT_KEY}" "$LEAP_BUILD_DIR"/signed-outputs/local/leap_[0-9]*_amd64.deb
+     GIT_LONG_SHA=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+       python3 -c "import sys
+import json
+print (json.load(sys.stdin)['gitcommitsha'])")
+     cd "${LEAP_GIT_DIR:?}" || exit
+     GIT_SHORT_SHA=$(git rev-parse --short $GIT_LONG_SHA)
+     PR_NUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+       python3 -c "import sys
+import json
+print (json.load(sys.stdin)['pr_num'])")
+     PR_NUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+  python3 -c "import sys
+import json
+print (json.load(sys.stdin)['pr_title'])")
+     MERGE_TIME=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+python3 -c "import sys
+import json
+print (json.load(sys.stdin)['merge_time'])")
+     echo "${MERGE_TIME} ${BRANCH} ${GIT_SHORT_SHA} ${PR_NUM} ${PR_TILE}" >> "${HTML_ROOT}"/leap/leap-build-history.txt
+     cp "${LEAP_BUILD_DIR}/signed-outputs/local/leap_*.deb.asc" "${HTML_ROOT}"/leap/signatures/${GIT_SHORT_SHA}.asc
   fi
 else
   echo "WARNING: checksums mismatch Local: $LOCAL_CHECKSUM CI: $CI_CHECKSUM"
 fi
-
