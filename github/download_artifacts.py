@@ -170,18 +170,19 @@ def unzip_artifact(destination_dir, file_name, merge_sha):
     # replace file if it already exists, remove first
     logging.info("cleaning out previous debs in dir %s", destination_dir)
     clean_dir_list = os.listdir(destination_dir)
-    logging.info("found matching files %s", clean_dir_list)
     clean_file_list = [ s for s in clean_dir_list if deb_file_pattern.match(s) ]
-    try:
-        os.remove(clean_file_list[0])
-    except FileNotFoundError:
-        pass
+    logging.info("found matching files %s", clean_file_list)
+    if len(clean_file_list) > 0:
+        try:
+            os.remove(destination_dir+"/"+clean_file_list[0])
+        except FileNotFoundError:
+            pass
 
     # commands
-    unzip_cmd = ["unzip", zip_file]
+    unzip_cmd = ["unzip", zip_file, "-d", destination_dir]
     logging.info("running cmd %s", unzip_cmd)
     unzip_result = subprocess.run(unzip_cmd, \
-        check=False, capture_output=True, text=True)
+        check=False, timeout=3, capture_output=True, text=True)
     if unzip_result.returncode != 0:
         logging.error("failed to unzip %s error %s", zip_file, unzip_result.stderr)
         exit()
@@ -195,13 +196,16 @@ def unzip_artifact(destination_dir, file_name, merge_sha):
     dir_list = os.listdir(destination_dir)
     logging.info("found matching files %s", dir_list)
     file_list = [ s for s in dir_list if deb_file_pattern.match(s) ]
+    if len(file_list) <= 0:
+        logging.error("expected to find deb package after unzip and found nothing!")
+        exit()
     full_file_listing = file_list[0]
 
     # checksum
     checksum_cmd = ["sha256sum", destination_dir+"/"+full_file_listing]
     logging.info("running cmd %s", checksum_cmd)
     checksum_result = subprocess.run(checksum_cmd, \
-        check=False, capture_output=True, text=True)
+        check=False, timeout=3, capture_output=True, text=True)
     if checksum_result.returncode != 0:
         logging.error("failed to checksum %s error %s", full_file_listing, checksum_result.stderr)
     checksum = checksum_result.stdout.split()[0]

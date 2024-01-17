@@ -1,6 +1,8 @@
 #!/bin/env bash
 
 BRANCH=${1:-release/5.0}
+# set to "tty" for sign on command line
+PARENT_SHELL=${2:-cron}
 
 TUID=$(id -ur)
 # must not be root to run
@@ -59,8 +61,7 @@ cd "${LEAP_BUILD_DIR:?}" || exit
 docker build -f "$LEAP_GIT_DIR"/tools/reproducible.Dockerfile -o ./signed-outputs/local "$LEAP_GIT_DIR"
 
 sleep 2
-cd signed-outputs/local || exit
-CHECKSUM=$(sha256sum ./leap_[0-9]*_amd64.deb)
+CHECKSUM=$(sha256sum "$LEAP_BUILD_DIR"/signed-outputs/local/leap_[0-9]*_amd64.deb)
 echo "${CHECKSUM}" > "$LEAP_BUILD_DIR"/signed-outputs/local-sha256sum.txt
 
 ## get ci deb
@@ -69,7 +70,7 @@ python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/github/download_a
   --download-dir "$LEAP_BUILD_DIR"/signed-outputs/ci \
   --bearer-token $BEARER > "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json
 
-LOCAL_CHECKSUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/local-sha256sum.txt | cut -d" " -f2)
+LOCAL_CHECKSUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/local-sha256sum.txt | cut -d" " -f1)
 CI_CHECKSUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
    python3 -c "import sys
 import json
@@ -77,8 +78,11 @@ print (json.load(sys.stdin)['sha256sum'])")
 
 if [ "$LOCAL_CHECKSUM" == "$CI_CHECKSUM" ]; then
   echo "checksums are equal you may sign"
+  if [ $PARENT_SHELL == "tty" ]; then
+     cd "${LEAP_BUILD_DIR:?}"/signed-outputs || exit
+     gpg --detach-sign --armor --default-key "${GIT_KEY}" "$LEAP_BUILD_DIR"/signed-outputs/local/leap_[0-9]*_amd64.deb 
+  fi
 else
   echo "WARNING: checksums mismatch Local: $LOCAL_CHECKSUM CI: $CI_CHECKSUM"
 fi
 
-#gpg --detach-sign --armor --default-key "${GIT_KEY}" leap_[0-9]*_amd64.deb
