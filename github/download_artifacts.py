@@ -325,4 +325,9 @@ and returns the associated git commit""")
 
     # Step 5. Unzip, print summary results with checksum and commit sha
     logging.info("Step 5: unzip downloaded archive to dir %s", args.download_dir)
-    print (unzip_artifact(args.download_dir, ARTIFACT, most_recent_action['sha']))
+    # returns checksum of deb, sha of git commit, and deb file name
+    package_info = unzip_artifact(args.download_dir, ARTIFACT, most_recent_action['sha'])
+    package_info['pr_num']   = selected_pr['number']
+    package_info['pr_title'] = selected_pr['title']
+    package_info['branch']   = args.branch
+    print(package_info)
