@@ -330,4 +330,5 @@ and returns the associated git commit""")
     package_info['pr_num']   = selected_pr['number']
     package_info['pr_title'] = selected_pr['title']
     package_info['branch']   = args.branch
-    print(package_info)
+    
+    print(json.dumps(package_info))
