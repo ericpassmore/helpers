@@ -99,30 +99,35 @@ print (json.load(sys.stdin)['pr_title'])")
 python3 -c "import sys
 import json
 print (json.load(sys.stdin)['merge_time'])")
-    DOWNLOAD_URL=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
-python3 -c "import sys
-import json
-print (json.load(sys.stdin)['download_url'])")
+
+     cp "${LEAP_BUILD_DIR}"/signed-outputs/local/leap_*.deb.asc "${HTML_ROOT}"/leap/signatures/${GIT_SHORT_SHA}.asc
+     DEB_FILE=$(basename "${LEAP_BUILD_DIR}"/signed-outputs/local/leap_*.deb)
+     DEB_FILE_SHA="${DEB_FILE%.*}_${GIT_SHORT_SHA}.deb"
+     DOWNLOAD_URL=/leap/packages/"${DEB_FILE_SHA}"
+     cp "${LEAP_BUILD_DIR}"/signed-outputs/local/"${DEB_FILE}" "${HTML_ROOT}"/leap/packages/"${DEB_FILE_SHA}"
+
      echo "<td>${MERGE_TIME}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
      echo "<td>${BRANCH}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
      echo "<td>${GIT_SHORT_SHA}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
+     echo "<td>${LOCAL_CHECKSUM}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
      echo "<td>${PR_NUM}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
      echo "<td>${PR_TITLE}</td>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td><a href='${DOWNLOAD_URL}'>Download Deb</a></td>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     cp "${LEAP_BUILD_DIR}"/signed-outputs/local/leap_*.deb.asc "${HTML_ROOT}"/leap/signatures/${GIT_SHORT_SHA}.asc
-     echo '<!DOCTYPE html><html><body>' > "${HTML_ROOT}"/leap/verified-builds.html
-     echo '<table><thead><tr><th>Merge Time</th><th>Branch</th><th>Git Commit</th><th>PR Num</th>' >> "${HTML_ROOT}"/leap/verified-builds.html
-     echo '<th>PR Title</th><th>Signature</th></tr></thead>' >> "${HTML_ROOT}"/leap/verified-builds.html
+     echo "<td><a href='${DOWNLOAD_URL}'>${DEB_FILE_SHA}</a></td>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
+     echo "<td><a href='/leap/signatures/${GIT_SHORT_SHA}.asc'>Signature</a>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
+
+     echo '<!DOCTYPE html><html><body><table>' > "${HTML_ROOT}"/leap/verified-builds.html
+     echo '<thead><tr><th>Merge Time</th><th>Branch</th>' >> "${HTML_ROOT}"/leap/verified-builds.html
+     echo '<th>Git Commit</th><th>Deb Checksum</th>' >> "${HTML_ROOT}"/leap/verified-builds.html
+     echo '<th>PR Num</th><th>PR Title</th><th>Deb Package</th>' >> "${HTML_ROOT}"/leap/verified-builds.html
+     echo '<th>Signature</th></tr></thead>' >> "${HTML_ROOT}"/leap/verified-builds.html
      echo '<tbody>' >> "${HTML_ROOT}"/leap/verified-builds.html
      while read -r line
      do
-       sha=$(echo $line | cut -d" " -f3 | sed 's/^<td>\([0-9a-z]\+\)<\/td>$/\1/')
-       SIGNED_LINK="<a href=/leap/signatures/${sha}.asc>Signature</a>"
        echo "<tr>" >> "${HTML_ROOT}"/leap/verified-builds.html
-       echo "${line}" "<td>${SIGNED_LINK}<td>" >> "${HTML_ROOT}"/leap/verified-builds.html
+       echo "${line}" >> "${HTML_ROOT}"/leap/verified-builds.html
        echo "</tr>" >> "${HTML_ROOT}"/leap/verified-builds.html
      done < "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "</tbody></table></body></html>" >> "${HTML_ROOT}"/leap/verified-builds.html
+     echo "</tbody></table></body></html>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
   fi
 else
   echo "WARNING: checksums mismatch Local: $LOCAL_CHECKSUM CI: $CI_CHECKSUM"

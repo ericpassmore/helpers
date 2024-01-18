@@ -336,6 +336,5 @@ and returns the associated git commit""")
     package_info['pr_title'] = selected_pr['title']
     package_info['branch']   = args.branch
     package_info['merge_time'] = selected_pr['merged_at']
-    package_info['download_url'] = artifact['archive_download_url']
 
     print(json.dumps(package_info))
