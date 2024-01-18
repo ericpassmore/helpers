@@ -48,7 +48,8 @@ def get_pr_list(branch, token):
                 "number": record['number'],
                 "head_branch": record['head']['ref'],
                 "merge_sha": record['merge_commit_sha'],
-                "head_sha": record['head']['sha']
+                "head_sha": record['head']['sha'],
+                "merged_at": record['merged_at']
             }
             merge_time = datetime.strptime(record['merged_at'], '%Y-%m-%dT%H:%M:%SZ')
 
@@ -335,5 +336,6 @@ and returns the associated git commit""")
     package_info['pr_title'] = selected_pr['title']
     package_info['branch']   = args.branch
     package_info['merge_time'] = selected_pr['merged_at']
+    package_info['download_url'] = artifact['archive_download_url']
 
     print(json.dumps(package_info))
