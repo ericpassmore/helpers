@@ -3,6 +3,7 @@
 BRANCH=${1:-release/5.0}
 # set to "tty" for sign on command line
 PARENT_SHELL=${2:-cron}
+TITLE=${3}
 
 TUID=$(id -ur)
 # must not be root to run
@@ -70,6 +71,7 @@ python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/github/download_a
   --download-dir "$LEAP_BUILD_DIR"/signed-outputs/ci \
   --bearer-token $BEARER > "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json
 
+## parse json
 LOCAL_CHECKSUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/local-sha256sum.txt | cut -d" " -f1)
 CI_CHECKSUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
    python3 -c "import sys
@@ -106,28 +108,20 @@ print (json.load(sys.stdin)['merge_time'])")
      DOWNLOAD_URL=/leap/packages/"${DEB_FILE_SHA}"
      cp "${LEAP_BUILD_DIR}"/signed-outputs/local/"${DEB_FILE}" "${HTML_ROOT}"/leap/packages/"${DEB_FILE_SHA}"
 
-     echo "<td>${MERGE_TIME}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td>${BRANCH}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td>${GIT_SHORT_SHA}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td>${LOCAL_CHECKSUM}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td>${PR_NUM}</td> " >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td>${PR_TITLE}</td>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td><a href='${DOWNLOAD_URL}'>${DEB_FILE_SHA}</a></td>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "<td><a href='/leap/signatures/${GIT_SHORT_SHA}.asc'>Signature</a>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
+     if [ -z "${TITLE}" ]; then
+         TITLE=$PR_TITLE
+     fi
 
-     echo '<!DOCTYPE html><html><body><table>' > "${HTML_ROOT}"/leap/verified-builds.html
-     echo '<thead><tr><th>Merge Time</th><th>Branch</th>' >> "${HTML_ROOT}"/leap/verified-builds.html
-     echo '<th>Git Commit</th><th>Deb Checksum</th>' >> "${HTML_ROOT}"/leap/verified-builds.html
-     echo '<th>PR Num</th><th>PR Title</th><th>Deb Package</th>' >> "${HTML_ROOT}"/leap/verified-builds.html
-     echo '<th>Signature</th></tr></thead>' >> "${HTML_ROOT}"/leap/verified-builds.html
-     echo '<tbody>' >> "${HTML_ROOT}"/leap/verified-builds.html
-     while read -r line
-     do
-       echo "<tr>" >> "${HTML_ROOT}"/leap/verified-builds.html
-       echo "${line}" >> "${HTML_ROOT}"/leap/verified-builds.html
-       echo "</tr>" >> "${HTML_ROOT}"/leap/verified-builds.html
-     done < "${HTML_ROOT}"/leap/leap-build-history.txt
-     echo "</tbody></table></body></html>" >> "${HTML_ROOT}"/leap/leap-build-history.txt
+     python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
+     --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
+     --merge-time "${MERGE_TIME}" \
+     --branch "${BRANCH}" \
+     --git-short-sha "${GIT_SHORT_SHA}" \
+     --full-checksum "$LOCAL_CHECKSUM" \
+     --pr-number "${PR_NUM}" \
+     --title "${TITLE}" \
+     --download-url "${DOWNLOAD_URL}" \
+     --deb-file-name "${DEB_FILE_SHA}"
   fi
 else
   echo "WARNING: checksums mismatch Local: $LOCAL_CHECKSUM CI: $CI_CHECKSUM"
