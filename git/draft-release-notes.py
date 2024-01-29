@@ -146,7 +146,7 @@ class GitMerge:
 # approvers
 class GH_PullRequest:
     def __init__(self, pr_number, git_repo_path):
-        self.git_repo_path = git_repo_path
+        self.git_repo_path = re.sub("\.git", "", git_repo_path)
         # get pr and parse json response
         pull_request_details = json.loads(self.get_gh_pr(pr_number))
         self.author = pull_request_details["author"]["login"]
