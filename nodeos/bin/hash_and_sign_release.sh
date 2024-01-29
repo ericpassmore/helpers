@@ -120,20 +120,31 @@ print (json.load(sys.stdin)['merge_time'])")
        cd "${LEAP_GIT_DIR:?}" || exit
        python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/git/draft-release-notes.py \
           --html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/leap/release_notes/${GIT_SHORT_SHA}.html
-       RELEASE_NOTES='--release-notes "YES"'
+       python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
+          --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
+          --merge-time "${MERGE_TIME}" \
+          --branch "${BRANCH}" \
+          --git-short-sha "${GIT_SHORT_SHA}" \
+          --full-checksum "$LOCAL_CHECKSUM" \
+          --pr-number "${PR_NUM}" \
+          --title "${TITLE}" \
+          --release-notes "YES" \
+          --download-url "${DOWNLOAD_URL}" \
+          --deb-file-name "${DEB_FILE_SHA}"
        cd "${LEAP_BUILD_DIR:?}" || exit
+     else
+       # no release notes otherwise same call as above
+       python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
+         --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
+         --merge-time "${MERGE_TIME}" \
+         --branch "${BRANCH}" \
+         --git-short-sha "${GIT_SHORT_SHA}" \
+         --full-checksum "$LOCAL_CHECKSUM" \
+         --pr-number "${PR_NUM}" \
+         --title "${TITLE}" \
+         --download-url "${DOWNLOAD_URL}" \
+         --deb-file-name "${DEB_FILE_SHA}"
      fi
-
-     python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
-       --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
-       --merge-time "${MERGE_TIME}" \
-       --branch "${BRANCH}" \
-       --git-short-sha "${GIT_SHORT_SHA}" \
-       --full-checksum "$LOCAL_CHECKSUM" \
-       --pr-number "${PR_NUM}" \
-       --title "${TITLE}" "$RELEASE_NOTES" \
-       --download-url "${DOWNLOAD_URL}" \
-       --deb-file-name "${DEB_FILE_SHA}"
 
   fi
 else
