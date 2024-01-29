@@ -4,6 +4,7 @@ BRANCH=${1:-release/5.0}
 # set to "tty" for sign on command line
 PARENT_SHELL=${2:-cron}
 TITLE=${3}
+LAST_RELEASE_CHECKPOINT=${4:-HEAD}
 
 TUID=$(id -ur)
 # must not be root to run
@@ -112,16 +113,28 @@ print (json.load(sys.stdin)['merge_time'])")
          TITLE=$PR_TITLE
      fi
 
+     ## create mini-release notes
+     # notes from LAST_RELEASE_CHECKPOINT TO HEAD
+     RELEASE_NOTES=""
+     if [ "$LAST_RELEASE_CHECKPOINT" != "HEAD" ]; then
+       cd "${LEAP_GIT_DIR:?}" || exit
+       python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/git/draft-release-notes.py \
+          --html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/leap/release_notes/${GIT_SHORT_SHA}.html
+       RELEASE_NOTES='--release-notes "YES"'
+       cd "${LEAP_BUILD_DIR:?}" || exit
+     fi
+
      python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
-     --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
-     --merge-time "${MERGE_TIME}" \
-     --branch "${BRANCH}" \
-     --git-short-sha "${GIT_SHORT_SHA}" \
-     --full-checksum "$LOCAL_CHECKSUM" \
-     --pr-number "${PR_NUM}" \
-     --title "${TITLE}" \
-     --download-url "${DOWNLOAD_URL}" \
-     --deb-file-name "${DEB_FILE_SHA}"
+       --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
+       --merge-time "${MERGE_TIME}" \
+       --branch "${BRANCH}" \
+       --git-short-sha "${GIT_SHORT_SHA}" \
+       --full-checksum "$LOCAL_CHECKSUM" \
+       --pr-number "${PR_NUM}" \
+       --title "${TITLE}" "$RELEASE_NOTES" \
+       --download-url "${DOWNLOAD_URL}" \
+       --deb-file-name "${DEB_FILE_SHA}"
+
   fi
 else
   echo "WARNING: checksums mismatch Local: $LOCAL_CHECKSUM CI: $CI_CHECKSUM"
