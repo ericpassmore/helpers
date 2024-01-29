@@ -31,6 +31,8 @@ def styling():
     css = "<style>\n"
     css += "/* Style the collapsible content. Note: hidden by default */\n"
     css += ".textblock { padding: 0 18px; background-color: #f1f1f1; width: 80%; transition: all .3s ease;}\n"
+    css += "p { margin: 0; }\n"
+    css += ".btcode { color: blue; font-family: 'Monaco', monospace; font-size: .75em }\n"
     css += "</style>\n"
     return css
 
@@ -168,6 +170,8 @@ class GH_PullRequest:
                     self.approvers.append(login)
         # parse issues
         self.issues = self.search_issues(self.body)
+        # parse special meta data
+        self.enf_meta_data = self.pull_enf_notes(self.comments)
 
     def get_gh_pr(self, prnum):
         # gh pr view --json number,title,author,reviews,isDraft,comments
@@ -199,16 +203,53 @@ class GH_PullRequest:
                         issues.append(tuple_i[pos])
         return issues
 
+    def pull_enf_notes(self, comments):
+        meta_data = {
+            'group': None,
+            'category': None,
+            'summary': None,
+            }
+        for single_comment in comments:
+            match = re.search(r'Note:start(.*?)Note:end', single_comment['body'], re.DOTALL)
+            if match:
+                for line in match.group(1).split('\n'):
+                    parts = line.split(":")
+                    if parts[0] == "group":
+                        meta_data['group'] = parts[1].strip()
+                    if parts[0] == "category":
+                        meta_data['category'] = parts[1].strip()
+                    if parts[0] == "summary":
+                        meta_data['summary'] = parts[1].strip()
+        return meta_data
+
     def as_oneline(self):
         author = f" Author: {self.author}"
         pr_num = f"PR Num: {self.prnum}"
+        category = f" Category: {self.enf_meta_data['category']}"
+        group = f" Group: {self.enf_meta_data['group']}"
         title  = f" Title: {self.title[0:55]}"
         approvers = f" Approvers: {', '.join(self.approvers)}"
-        # strip down to ids
-        issue_ids = list(map(lambda n: n.split('/')[-1], self.issues))
-        issues = f" Issues: {', '.join(issue_ids)}"
+        if len(self.issues) > 0:
+            # strip down to ids
+            issue_ids = list(map(lambda n: n.split('/')[-1], self.issues))
+            issues = f" Issues: {', '.join(issue_ids)}"
+        else:
+            issues = "Issues: None Linked"
+        summary = f" Summary: {self.enf_meta_data['summary']}"
 
-        return pr_num + author + approvers + issues + title
+        return pr_num + author + approvers + issues + title + summary
+
+    def replace_with_link(self, match):
+        url = match.group(0)
+        shortened_url = url[-7:]  # Get the last 7 characters of the URL
+        return f'<a href="{url}">{shortened_url}</a>'
+
+    def replace_md_with_html(self):
+        backtik_pattern = r'`([^`]*)`'
+        body_as_html = re.sub(backtik_pattern, r'<span class="btcode">\1</span>', self.body)
+        url_pattern = r'https?://\S+'
+        body_as_html = re.sub(url_pattern, self.replace_with_link, body_as_html)
+        self.body = body_as_html
 
     def as_html(self, newafter):
         newtag = ""
@@ -218,28 +259,38 @@ class GH_PullRequest:
         base_url = f"https://github.com/{self.git_repo_path}"
         author = f"<p>Author: {self.author}</p>\n"
 
+        category = f"<p>Category: {self.enf_meta_data['category']}</p>\n"
+        group = f"<p>Group: {self.enf_meta_data['group']}</p>\n"
+
         linked_title  = f"<h2>{newtag}<a href=\"{base_url}/pull/{self.prnum}\">{self.title[0:55]}</a></h2>\n"
         approvers = f"<p>Approvers: {', '.join(self.approvers)}</p>\n"
-        body = f"<div class=\"textblock\">Body: {self.body}</div>\n"
-        issues = f"Issues:\n"
+        self.replace_md_with_html()
+        body = f"<div class=\"textblock\">PR Text: {self.body}</div>\n"
+        issues = f"<p>Issues:</p>\n"
         if len(self.issues) > 0:
             issues += "<ul>\n"
             for i in self.issues:
                 issues += f"<li><a href=\"{i}\">{i}</a></li>\n"
             issues += "</ul>\n"
+        else:
+            issues = "<p>Issues: None Linked</p>\n"
+        summary = f"<p>Summary: {self.enf_meta_data['summary']}</p>\n"
         sep = f"<hr width=\"50%\" size=\"3px\" align=\"center\"/>"
 
-        return linked_title + author + approvers + issues + body + sep
+        return linked_title + summary + category + group + author + approvers + issues + body + sep
 
     def __str__(self):
         author = f"Author: {self.author}\n"
         body = f"Body: {self.body}\n"
+        category = f"Category: {self.enf_meta_data['category']}\n"
+        group = f"Group: {self.enf_meta_data['group']}\n"
         is_draft = f"isDraft: {self.is_draft}\n"
         milestone = f"Milestone: {self.milestone}\n"
         pr_num = f"PR Num: {self.prnum}\n"
         title  = f"Title: {self.title}\n"
         approvers = f"Approvers: {', '.join(self.approvers)}\n"
         issues = f"Issues: {', '.join(self.issues)}\n"
+        summary = f"Summary: {self.enf_meta_data['summary']}\n"
         return title + author + pr_num + approvers + issues + milestone + is_draft + body
 
 def get_git_log_messages(repo_path, start):
