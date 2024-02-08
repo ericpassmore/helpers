@@ -39,21 +39,24 @@ def styling():
 def javascript():
     return ""
 
-def start_doc(html=False):
+def start_doc(start, html=False):
     # only applies to html, skip in all other cases
     if not html:
         return ""
 
     js = javascript()
     css = styling()
-    return "<!DOCTYPE html>\n<html><head>"+js+css+"</head><body>\n"
+    html = "<!DOCTYPE html>\n<html><head>"+js+css+"</head><body>\n"
+    html += f"<h1>Change Log Since {start}</h1>\n"
+    html += "<ul class='summary'>\n"
+    return html
 
 def end_doc(html=False):
     # only applies to html, skip in all other cases
     if not html:
         return ""
 
-    return "\n</body></html>\n"
+    return "\n</ul>\n</body></html>\n"
 
 #
 # Class to hold information on git merge
@@ -210,7 +213,7 @@ class GH_PullRequest:
             'summary': None,
             }
         for single_comment in comments:
-            match = re.search(r'Note:start(.*?)Note:end', single_comment['body'], re.DOTALL)
+            match = re.search(r'Note:start(.*?)Note:\s*end', single_comment['body'], re.DOTALL)
             if match:
                 for line in match.group(1).split('\n'):
                     parts = line.split(":")
@@ -222,62 +225,134 @@ class GH_PullRequest:
                         meta_data['summary'] = parts[1].strip()
         return meta_data
 
-    def as_oneline(self):
-        author = f" Author: {self.author}"
-        pr_num = f"PR Num: {self.prnum}"
-        category = f" Category: {self.enf_meta_data['category']}"
-        group = f" Group: {self.enf_meta_data['group']}"
-        title  = f" Title: {self.title[0:55]}"
-        approvers = f" Approvers: {', '.join(self.approvers)}"
-        if len(self.issues) > 0:
-            # strip down to ids
-            issue_ids = list(map(lambda n: n.split('/')[-1], self.issues))
-            issues = f" Issues: {', '.join(issue_ids)}"
-        else:
-            issues = "Issues: None Linked"
-        summary = f" Summary: {self.enf_meta_data['summary']}"
-
-        return pr_num + author + approvers + issues + title + summary
+    def as_oneline(self, category_listing, newafter=-1):
+        content = ""
+        full_list = ""
+        for cat_name in category_listing:
+            for group_name in category_listing[cat_name]:
+                for item in category_listing[cat_name][group_name]:
+                    author = f" Author: {item['author']}"
+                    pr_num = f"PR Num: {item['pr_num']}"
+                    category = f" Category: {cat_name}"
+                    group = f" Group: {group_name}"
+                    approvers = f" Approvers: {', '.join(item['approvers'])}"
+                    summary = f" Summary: {item['summary']}"
+                    content += pr_num + summary + category + group + author + "\n"
+        return content
 
     def replace_with_link(self, match):
         url = match.group(0)
         shortened_url = url[-7:]  # Get the last 7 characters of the URL
         return f'<a href="{url}">{shortened_url}</a>'
 
-    def replace_md_with_html(self):
+    def replace_md_with_html(self, body):
         backtik_pattern = r'`([^`]*)`'
-        body_as_html = re.sub(backtik_pattern, r'<span class="btcode">\1</span>', self.body)
+        body_as_html = re.sub(backtik_pattern, r'<span class="btcode">\1</span>', body)
         url_pattern = r'https?://\S+'
         body_as_html = re.sub(url_pattern, self.replace_with_link, body_as_html)
-        self.body = body_as_html
+        return body_as_html
 
-    def as_html(self, newafter):
+    def as_full_html(self, category_listing, newafter=-1):
+        content = ""
+        for cat_name in category_listing:
+            content += f"<h2>{cat_name}</h2>\n"
+            for group_name in category_listing[cat_name]:
+                content += f"<h3>{group_name}</h3>\n"
+                for item in category_listing[cat_name][group_name]:
+                    newtag = ""
+                    if newafter > 0 and item['pr_num'] > newafter:
+                        newtag = "<font color='red'> NEW </font>"
+
+                    contributors = f"<p>Author: {item['author']} "
+                    category = f"<p>Group: {item['group']} "
+                    category = f" Category: {item['category']}</p>\n"
+
+                    linked_title  = f"<h4 class='prlink'>{newtag}<a href=\"{item['pr_link']}\">{item['summary']}</a></h4>\n"
+                    contributors += f"Approvers: {', '.join(item['approvers'])}</p>\n"
+                    item['body'] = self.replace_md_with_html(item['body'])
+                    body = f"<div class=\"textblock\">PR Text: {item['body']}</div>\n"
+                    issues = f"<p class='heading'>Issues:</p>\n"
+
+                    if len(item['issues']) > 0:
+                        issues += "<ul class='issues'>\n"
+                        for i in item['issues']:
+                            issues += f"<li><a href=\"{item['base_url']}/issues/{i}\">{i}</a></li>\n"
+                        issues += "</ul>\n"
+                    else:
+                        issues = "<p>Issues: None Linked</p>\n"
+
+                    title = f"<p>PR Title: {item['title']}</p>\n"
+                    sep = f"<hr width=\"50%\" size=\"3px\" align=\"center\"/>"
+                    content += "\n<li>\n" + linked_title + category + \
+                        contributors + issues + body + sep + "\n</li>\n"
+        return content
+
+    def as_html(self, category_listing, newafter=-1):
+        content = ""
+        full_list = ""
+        for cat_name in category_listing:
+            content += f"<h2>{cat_name}</h2>\n"
+            for group_name in category_listing[cat_name]:
+                content += f"<h3>{group_name}</h3>\n"
+                for item in category_listing[cat_name][group_name]:
+                    newtag = ""
+                    if newafter > 0 and item['pr_num'] > newafter:
+                        newtag = "<font color='red'> NEW </font>"
+                    content += f"<li>PR {item['pr_num']}: <a href=\"{item['pr_link']}\">{item['summary']}</a> {newtag} by {item['author']}</li>"
+        return content
+
+    def build_category_list(self, category_listing, newafter=-1):
         newtag = ""
         if newafter > 0 and self.prnum > newafter:
             newtag = "<font color='red'> NEW </font>"
 
         base_url = f"https://github.com/{self.git_repo_path}"
-        author = f"<p>Author: {self.author}</p>\n"
 
-        category = f"<p>Category: {self.enf_meta_data['category']}</p>\n"
-        group = f"<p>Group: {self.enf_meta_data['group']}</p>\n"
+        item = {
+            'base_url': f"https://github.com/{self.git_repo_path}",
+            'category': self.enf_meta_data['category'],
+            'group': self.enf_meta_data['group'],
+            'summary': self.enf_meta_data['summary'],
+            'pr_link': f"{base_url}/pull/{self.prnum}",
+            'author': self.author,
+            'newtag': newtag,
+            'body': self.body,
+            'is_draft': self.is_draft,
+            'milestone': self.milestone,
+            'pr_num': self.prnum,
+            'title': self.title,
+            'approvers': self.approvers,
+            'issues': self.issues
+        }
 
-        linked_title  = f"<h2>{newtag}<a href=\"{base_url}/pull/{self.prnum}\">{self.title[0:55]}</a></h2>\n"
-        approvers = f"<p>Approvers: {', '.join(self.approvers)}</p>\n"
-        self.replace_md_with_html()
-        body = f"<div class=\"textblock\">PR Text: {self.body}</div>\n"
-        issues = f"<p>Issues:</p>\n"
-        if len(self.issues) > 0:
-            issues += "<ul>\n"
-            for i in self.issues:
-                issues += f"<li><a href=\"{i}\">{i}</a></li>\n"
-            issues += "</ul>\n"
+        if item['category'] in category_listing:
+            if item['group'] in category_listing[item['category']]:
+                category_listing[item['category']][item['group']].append(item)
+            else:
+                category_listing[item['category']][item['group']] = []
+                category_listing[item['category']][item['group']].append(item)
         else:
-            issues = "<p>Issues: None Linked</p>\n"
-        summary = f"<p>Summary: {self.enf_meta_data['summary']}</p>\n"
-        sep = f"<hr width=\"50%\" size=\"3px\" align=\"center\"/>"
+            category_listing[item['category']] = {}
+            category_listing[item['category']][item['group']] = []
+            category_listing[item['category']][item['group']].append(item)
 
-        return linked_title + summary + category + group + author + approvers + issues + body + sep
+        return category_listing
+
+    def as_markdown(self, category_listing, newafter=-1):
+        content = ""
+        full_list = ""
+        for cat_name in category_listing:
+            content += f"## {cat_name}\n"
+            for group_name in category_listing[cat_name]:
+                content += f"### {group_name}\n"
+                for record in category_listing[cat_name][group_name]:
+                    content += '[' + record['summary'] + '](' +  record['pr_link'] + ')\n'
+                    full_list += f"{record['summary']} by {record['author']} in {record['pr_link']}\n"
+
+        content += "## Full PR List\n"
+        content += full_list
+
+        return content
 
     def __str__(self):
         author = f"Author: {self.author}\n"
@@ -291,7 +366,7 @@ class GH_PullRequest:
         approvers = f"Approvers: {', '.join(self.approvers)}\n"
         issues = f"Issues: {', '.join(self.issues)}\n"
         summary = f"Summary: {self.enf_meta_data['summary']}\n"
-        return title + author + pr_num + approvers + issues + milestone + is_draft + body
+        return summary + author + pr_num + group + category + issues + milestone + is_draft
 
 def get_git_log_messages(repo_path, start):
     range=start+'..HEAD'
@@ -310,7 +385,9 @@ if __name__ == '__main__':
     parser.add_argument('--debug_pr_num', '-n', type=str, help='dump contents for this PR Id')
     parser.add_argument('--newafter', '-a', type=str, help='Only for HTML Reports: Tag later PRs with New')
     parser.add_argument('--oneline', action='store_true', help='format as a single line of text')
-    parser.add_argument('--html', action='store_true', help='format as html for the web')
+    parser.add_argument('--full-html', action='store_true', help='full html listing for research')
+    parser.add_argument('--html', action='store_true', help='oneline summary html')
+    parser.add_argument('--markdown', action='store_true', help='markdown version of release notes')
     parser.add_argument('--useage', '-u', action='store_true', help='print useage')
 
     args = parser.parse_args()
@@ -361,7 +438,10 @@ if __name__ == '__main__':
     if DEBUG:
         print(f"Gathering Issues Details using gh pr view")
     # print document header
-    print(start_doc(args.html))
+    is_html = args.html or args.full_html
+    print(start_doc(args.start, is_html))
+    # create data structure for category listings
+    listing_by_cat = {}
     for item in merges:
         # shows work getting done, otherwise you question the silence
         if DEBUG:
@@ -377,15 +457,20 @@ if __name__ == '__main__':
             print(pr_details)
 
         # different formate options delegated to object
-        if args.oneline:
-            print(pr_details.as_oneline())
-        elif args.html:
-            newafter = 0
-            if args.newafter:
-                newafter = int(args.newafter)
-            print(pr_details.as_html(newafter))
-        else:
-            print(pr_details)
+        newafter = 0
+        if args.newafter:
+            newafter = int(args.newafter)
+        # no print just build up categories and groups
+        listing_by_cat = pr_details.build_category_list(listing_by_cat, newafter)
+
+    if args.oneline:
+        print(pr_details.as_oneline(listing_by_cat))
+    elif args.full_html:
+        print(pr_details.as_full_html(listing_by_cat, newafter))
+    elif args.html:
+        print(pr_details.as_html(listing_by_cat, newafter))
+    elif args.markdown:
+        print(pr_details.as_markdown(listing_by_cat))
 
     # print document footer
-    print(end_doc(args.html))
+    print(end_doc(is_html))
