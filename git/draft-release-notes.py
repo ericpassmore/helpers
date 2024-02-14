@@ -39,9 +39,9 @@ def styling():
 def javascript():
     return ""
 
-def start_doc(start, html=False):
+def start_doc(start, html=False, no_html_header=False):
     # only applies to html, skip in all other cases
-    if not html:
+    if not html or no_html_header:
         return ""
 
     js = javascript()
@@ -51,9 +51,9 @@ def start_doc(start, html=False):
     html += "<ul class='summary'>\n"
     return html
 
-def end_doc(html=False):
+def end_doc(html=False, no_html_footer=False):
     # only applies to html, skip in all other cases
-    if not html:
+    if not html or no_html_footer:
         return ""
 
     return "\n</ul>\n</body></html>\n"
@@ -370,6 +370,10 @@ class GH_PullRequest:
 
 def get_git_log_messages(repo_path, start):
     range=start+'..HEAD'
+
+    if start == "lastweek":
+        range='--since="1 week ago"'
+
     command = ['git', '-C', repo_path, 'log', range, '--abbrev-commit', '--merges', '--first-parent']
     result = subprocess.run(command, capture_output=True, text=True)
 
@@ -380,7 +384,7 @@ def get_git_log_messages(repo_path, start):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get git log messages from a repository.')
-    parser.add_argument('start', type=str, help='commit or tag that marks the beginning of the release')
+    parser.add_argument('start', type=str, help='commit or tag to start from or keyword "lastweek"')
     parser.add_argument('--debug', action='store_true', help='print out debug statments')
     parser.add_argument('--debug_pr_num', '-n', type=str, help='dump contents for this PR Id')
     parser.add_argument('--newafter', '-a', type=str, help='Only for HTML Reports: Tag later PRs with New')
@@ -389,6 +393,8 @@ if __name__ == '__main__':
     parser.add_argument('--html', action='store_true', help='oneline summary html')
     parser.add_argument('--markdown', action='store_true', help='markdown version of release notes')
     parser.add_argument('--useage', '-u', action='store_true', help='print useage')
+    parser.add_argument('--no-html-header', action='store_true', help='supress html header')
+    parser.add_argument('--no-html-footer', action='store_true', help='supress html footer')
 
     args = parser.parse_args()
 
@@ -439,7 +445,7 @@ if __name__ == '__main__':
         print(f"Gathering Issues Details using gh pr view")
     # print document header
     is_html = args.html or args.full_html
-    print(start_doc(args.start, is_html))
+    print(start_doc(args.start, is_html, args.no_html_header))
     # create data structure for category listings
     listing_by_cat = {}
     for item in merges:
@@ -473,4 +479,4 @@ if __name__ == '__main__':
         print(pr_details.as_markdown(listing_by_cat))
 
     # print document footer
-    print(end_doc(is_html))
+    print(end_doc(is_html, args.no_html_footer))
