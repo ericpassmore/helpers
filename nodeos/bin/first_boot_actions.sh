@@ -15,6 +15,7 @@ cleos --url $ENDPOINT create account eosio eosio.stake $PUBLIC_KEY
 cleos --url $ENDPOINT create account eosio eosio.token $PUBLIC_KEY
 cleos --url $ENDPOINT create account eosio eosio.vpay $PUBLIC_KEY
 cleos --url $ENDPOINT create account eosio eosio.rex $PUBLIC_KEY
+cleos --url $ENDPOINT create account eosio eosio.wrap $PUBLIC_KEY
 
 # TOKENS $$$
 cleos --url $ENDPOINT set contract eosio.token "$CONTRACT_DIR"/eosio.token/
