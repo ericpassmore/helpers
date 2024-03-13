@@ -79,7 +79,6 @@ build_config() {
 # open wallet add keys if needed
 #######
 open_wallet() {
-
   EOSRootPrivateKey=$(grep Private "${WALLET_DIR}"/root-user.keys | cut -d: -f2 | sed 's/ //g')
   EOSRootPublicKey=$(grep Public "${WALLET_DIR}"/root-user.keys | cut -d: -f2 | sed 's/ //g')
 
@@ -156,6 +155,7 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
+[ ! -f "$WALLET_DIR"/root-user.keys ] && cleos create key --to-console > "$WALLET_DIR"/root-user.keys
 
 case $COMMAND in
   START)
