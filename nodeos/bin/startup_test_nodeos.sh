@@ -19,7 +19,7 @@ start_nodeos() {
 
   # startup
   if [ "$FROM_GENESIS" == "YES" ]; then
-    nodeos --data-dir "$DATA_DIR" --config "$CONFIG_DIR"/config.ini >> "$LOG_DIR"/nodeos.log 2>&1 &
+    nodeos --genesis-json "$CONFIG_DIR"/genesis.json --data-dir "$DATA_DIR" --config "$CONFIG_DIR"/config.ini >> "$LOG_DIR"/nodeos.log 2>&1 &
     PID=$!
     echo "Started $1 Nodeos From Genesis with $DATA_DIR and ${CONFIG_DIR}/config.ini"
   else
