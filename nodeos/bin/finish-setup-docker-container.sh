@@ -18,14 +18,14 @@ git pull origin $CDT_GIT_COMMIT_TAG
 
 mkdir build
 cd build || exit
-#cmake .. >> "$LOG_DIR"/cdt_build_log.log 2>&1
-#make -j ${NPROC} >> "$LOG_DIR"/cdt_build_log.log 2>&1
+cmake .. >> "$LOG_DIR"/cdt_build_log.log 2>&1
+make -j 8 >> "$LOG_DIR"/cdt_build_log.log 2>&1
 echo "FINSIHED BUILDING CDT"
 
 mkdir $WALLET_DIR $CONFIG_DIR $DATA_DIR
 
 ## su to root and install
-# cd "${ROOT_DIR:?}"/deb
-# dpkg -i ./leap_[5-6].[0-9].[0-9]*-ubuntu22.04_amd64.deb
-# cd ${ROOT_DIR:?}"/repos/cdt/build || exit
+# cd /local/eosnetworkfoundation/deb/
+# dpkg -i ./leap_[5-6].[0-9].[0-9]*_amd64.deb
+# cd /local/eosnetworkfoundation/repos/cdt/build || exit
 # make install

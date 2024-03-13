@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+COMMAND=$1
 
 
 #########
@@ -8,7 +9,6 @@
 start_nodeos() {
   TYPE=${1:-PRODUCER}
   FROM_GENESIS=${2:-NO}
-
 
   # setup proper configuration
   if [ "$TYPE" == "READONLY" ]; then
@@ -109,6 +109,8 @@ start_nodeos_from_genesis() {
     exit 1
   fi
 
+  build_config
+
   # empty log
   :> ${LOG_DIR}/nodeos.log
   start_nodeos PRODUCER YES
@@ -119,10 +121,21 @@ start_nodeos_from_genesis() {
   # Three args
   # endpoint
   # contract dir
-  # root public key for account creation 
+  # root public key for account creation
   bash "${ROOT_DIR}"/bin/first_boot_actions.sh "http://127.0.0.1:8888" \
     "${ROOT_DIR}"/repos/eos-system-contracts/build/contracts \
     $EOSRootPublicKey
+}
+
+#######
+# clean out data files
+######
+clean_nodeos() {
+  [ -f "$ROOT_DIR"/nodeos/data/blocks/blocks.log ] && rm -f "$ROOT_DIR"/nodeos/data/blocks/blocks.log
+  [ -f "$ROOT_DIR"/nodeos/data/blocks/blocks.index ] && rm -f "$ROOT_DIR"/nodeos/data/blocks/blocks.index
+  [ -f "$ROOT_DIR"/nodeos/data/state/shared_memory.bin ] && rm -f "$ROOT_DIR"/nodeos/data/state/shared_memory.bin
+  [ -f "$ROOT_DIR"/nodeos/data/state/code_cache.bin ] && rm -f "$ROOT_DIR"/nodeos/data/state/code_cache.bin
+  [ -f "$ROOT_DIR"/nodeos/data/blocks/reversible/fork_db.dat ] && rm -f "$ROOT_DIR"/nodeos/data/blocks/reversible/fork_db.dat
 }
 
 ## Source Config, provides the following:
@@ -143,3 +156,30 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
+
+case $COMMAND in
+  START)
+    echo "Starting the system..."
+    start_nodeos PRODUCER NO
+    # Insert commands to start the system here
+    ;;
+  STOP)
+    echo "Stopping the system..."
+    stop_nodeos
+    # Insert commands to stop the system here
+    ;;
+  GENESIS)
+    echo "Initializing from genesis..."
+    start_nodeos_from_genesis
+    # Insert commands for genesis process here
+    ;;
+  CLEAN)
+    echo "Cleaning up resources..."
+    clean_nodeos
+    # Insert cleanup commands here
+    ;;
+  *)
+    echo "Invalid command: $COMMAND"
+    echo "Valid commands are: START, STOP, GENESIS, CLEAN."
+    ;;
+esac
