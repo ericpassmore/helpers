@@ -64,13 +64,13 @@ build_config() {
   EOSRootPrivateKey=$(grep Private "${WALLET_DIR}"/root-user.keys | cut -d: -f2 | sed 's/ //g')
   EOSRootPublicKey=$(grep Public "${WALLET_DIR}"/root-user.keys | cut -d: -f2 | sed 's/ //g')
 
-  sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "${ROOT_DIR}"/config/test-producer-config.ini \
+  sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "$ROOT_DIR"/repos/helpers/nodeos/config/test-producer-config.ini \
      | sed "s/EOSRootPrivateKey/$EOSRootPrivateKey/" > "${CONFIG_DIR}"/test-producer-config.ini
-  sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "${ROOT_DIR}"/config/test-readonly-config.ini \
+  sed "s/EOSRootPublicKey/$EOSRootPublicKey/" "$ROOT_DIR"/repos/helpers/nodeos/config/test-readonly-config.ini \
      | sed "s/EOSRootPrivateKey/$EOSRootPrivateKey/" > "${CONFIG_DIR}"/test-readonly-config.ini
 
   NOW=$(date +%FT%T.%3N)
-  GENESIS_FILE="${ROOT_DIR}"/config/genesis.json
+  GENESIS_FILE="$ROOT_DIR"/repos/helpers/nodeos/config/genesis.json
   sed "s/\"initial_key\": \".*\",/\"initial_key\": \"${EOSRootPublicKey}\",/" $GENESIS_FILE > /tmp/genesis.json
   sed "s/\"initial_timestamp\": \".*\",/\"initial_timestamp\": \"${NOW}\",/" /tmp/genesis.json > ${CONFIG_DIR}/genesis.json
 }
@@ -155,6 +155,8 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
+
+set -x
 [ ! -f "$WALLET_DIR"/root-user.keys ] && cleos create key --to-console > "$WALLET_DIR"/root-user.keys
 
 case $COMMAND in
