@@ -3,7 +3,8 @@ RUN apt-get -y update && apt-get install -y  \
         build-essential   \
         cmake             \
         git               \
-	curl              \
+	      curl              \
+        wget              \
         libcurl4-openssl-dev \
         libgmp-dev        \
         libssl-dev        \
@@ -36,3 +37,4 @@ RUN git clone --recursive https://github.com/AntelopeIO/leap.git
 RUN git clone --recursive https://github.com/AntelopeIO/cdt.git
 RUN git clone https://github.com/AntelopeIO/reference-contracts.git
 RUN git clone https://github.com/eosnetworkfoundation/eos-system-contracts.git
+RUN git clone https://github.com/ericpassmore/helpers.git
