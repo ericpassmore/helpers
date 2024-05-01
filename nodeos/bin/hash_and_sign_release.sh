@@ -30,15 +30,15 @@ else
 fi
 
 ## check git sha of last run
-if [ -f "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json ]; then
-  CI_LAST_GIT_SHA=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+if [ -f "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json ]; then
+  CI_LAST_GIT_SHA=$(cat "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json | \
     python3 -c "import sys
 import json
 print (json.load(sys.stdin)['gitcommitsha'])")
 fi
 
 ## update git
-cd "${LEAP_GIT_DIR:?}" || exit
+cd "${SPRING_GIT_DIR:?}" || exit
 git fetch origin $BRANCH
 git checkout $BRANCH
 git pull origin $BRANCH
@@ -52,29 +52,29 @@ fi
 git submodule update --init --recursive
 
 ## setup build dir
-rm -rf $LEAP_BUILD_DIR
-mkdir "$LEAP_BUILD_DIR"
-mkdir "$LEAP_BUILD_DIR"/signed-outputs
-mkdir "$LEAP_BUILD_DIR"/signed-outputs/ci
-mkdir "$LEAP_BUILD_DIR"/signed-outputs/local
+rm -rf $SPRING_BUILD_DIR
+mkdir "$SPRING_BUILD_DIR"
+mkdir "$SPRING_BUILD_DIR"/signed-outputs
+mkdir "$SPRING_BUILD_DIR"/signed-outputs/ci
+mkdir "$SPRING_BUILD_DIR"/signed-outputs/local
 
 ## run local build
-cd "${LEAP_BUILD_DIR:?}" || exit
-docker build -f "$LEAP_GIT_DIR"/tools/reproducible.Dockerfile -o ./signed-outputs/local "$LEAP_GIT_DIR"
+cd "${SPRING_BUILD_DIR:?}" || exit
+docker build -f "$SPRING_GIT_DIR"/tools/reproducible.Dockerfile -o ./signed-outputs/local "$SPRING_GIT_DIR"
 
 sleep 2
-CHECKSUM=$(sha256sum "$LEAP_BUILD_DIR"/signed-outputs/local/leap_[0-9]*_amd64.deb)
-echo "${CHECKSUM}" > "$LEAP_BUILD_DIR"/signed-outputs/local-sha256sum.txt
+CHECKSUM=$(sha256sum "$SPRING_BUILD_DIR"/signed-outputs/local/spring_[0-9]*_amd64.deb)
+echo "${CHECKSUM}" > "$SPRING_BUILD_DIR"/signed-outputs/local-sha256sum.txt
 
 ## get ci deb
 python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/github/download_artifacts.py \
   --branch $BRANCH \
-  --download-dir "$LEAP_BUILD_DIR"/signed-outputs/ci \
-  --bearer-token $BEARER > "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json
+  --download-dir "$SPRING_BUILD_DIR"/signed-outputs/ci \
+  --bearer-token $BEARER > "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json
 
 ## parse json
-LOCAL_CHECKSUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/local-sha256sum.txt | cut -d" " -f1)
-CI_CHECKSUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+LOCAL_CHECKSUM=$(cat "$SPRING_BUILD_DIR"/signed-outputs/local-sha256sum.txt | cut -d" " -f1)
+CI_CHECKSUM=$(cat "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json | \
    python3 -c "import sys
 import json
 print (json.load(sys.stdin)['sha256sum'])")
@@ -82,32 +82,32 @@ print (json.load(sys.stdin)['sha256sum'])")
 if [ "$LOCAL_CHECKSUM" == "$CI_CHECKSUM" ]; then
   echo "checksums are equal you may sign"
   if [ $PARENT_SHELL == "tty" ]; then
-     cd "${LEAP_BUILD_DIR:?}"/signed-outputs || exit
-     gpg --detach-sign --armor --default-key "${GIT_KEY}" "$LEAP_BUILD_DIR"/signed-outputs/local/leap_[0-9]*_amd64.deb
-     GIT_LONG_SHA=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+     cd "${SPRING_BUILD_DIR:?}"/signed-outputs || exit
+     gpg --detach-sign --armor --default-key "${GIT_KEY}" "$SPRING_BUILD_DIR"/signed-outputs/local/spring_[0-9]*_amd64.deb
+     GIT_LONG_SHA=$(cat "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json | \
        python3 -c "import sys
 import json
 print (json.load(sys.stdin)['gitcommitsha'])")
-     cd "${LEAP_GIT_DIR:?}" || exit
+     cd "${SPRING_GIT_DIR:?}" || exit
      GIT_SHORT_SHA=$(git rev-parse --short $GIT_LONG_SHA)
-     PR_NUM=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+     PR_NUM=$(cat "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json | \
        python3 -c "import sys
 import json
 print (json.load(sys.stdin)['pr_num'])")
-     PR_TITLE=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+     PR_TITLE=$(cat "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json | \
   python3 -c "import sys
 import json
 print (json.load(sys.stdin)['pr_title'])")
-     MERGE_TIME=$(cat "$LEAP_BUILD_DIR"/signed-outputs/ci-package-info.json | \
+     MERGE_TIME=$(cat "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json | \
 python3 -c "import sys
 import json
 print (json.load(sys.stdin)['merge_time'])")
 
-     cp "${LEAP_BUILD_DIR}"/signed-outputs/local/leap_*.deb.asc "${HTML_ROOT}"/leap/signatures/${GIT_SHORT_SHA}.asc
-     DEB_FILE=$(basename "${LEAP_BUILD_DIR}"/signed-outputs/local/leap_*.deb)
+     cp "${SPRING_BUILD_DIR}"/signed-outputs/local/spring_*.deb.asc "${HTML_ROOT}"/spring/signatures/${GIT_SHORT_SHA}.asc
+     DEB_FILE=$(basename "${SPRING_BUILD_DIR}"/signed-outputs/local/spring_*.deb)
      DEB_FILE_SHA="${DEB_FILE%.*}_${GIT_SHORT_SHA}.deb"
-     DOWNLOAD_URL=/leap/packages/"${DEB_FILE_SHA}"
-     cp "${LEAP_BUILD_DIR}"/signed-outputs/local/"${DEB_FILE}" "${HTML_ROOT}"/leap/packages/"${DEB_FILE_SHA}"
+     DOWNLOAD_URL=/spring/packages/"${DEB_FILE_SHA}"
+     cp "${SPRING_BUILD_DIR}"/signed-outputs/local/"${DEB_FILE}" "${HTML_ROOT}"/spring/packages/"${DEB_FILE_SHA}"
 
      if [ -z "${TITLE}" ]; then
          TITLE=$PR_TITLE
@@ -117,12 +117,12 @@ print (json.load(sys.stdin)['merge_time'])")
      # notes from LAST_RELEASE_CHECKPOINT TO HEAD
      RELEASE_NOTES=""
      if [ "$LAST_RELEASE_CHECKPOINT" != "HEAD" ]; then
-       cd "${LEAP_GIT_DIR:?}" || exit
+       cd "${SPRING_GIT_DIR:?}" || exit
        python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/git/draft-release-notes.py \
-          --html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/leap/release_notes/${GIT_SHORT_SHA}.html
+          --html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/spring/release_notes/${GIT_SHORT_SHA}.html
 
-       python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
-          --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
+       python3 /local/eosnetworkfoundation/repos/ericpassmore/spring-website/create_build_history_json.py \
+          --file "${HTML_ROOT}"/spring/spring-verified-builds.json \
           --merge-time "${MERGE_TIME}" \
           --branch "${BRANCH}" \
           --git-short-sha "${GIT_SHORT_SHA}" \
@@ -134,13 +134,13 @@ print (json.load(sys.stdin)['merge_time'])")
           --deb-file-name "${DEB_FILE_SHA}"
 
        python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/git/draft-release-notes.py \
-          --full-html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/leap/release_notes/full-${GIT_SHORT_SHA}.html
+          --full-html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/spring/release_notes/full-${GIT_SHORT_SHA}.html
 
-       cd "${LEAP_BUILD_DIR:?}" || exit
+       cd "${SPRING_BUILD_DIR:?}" || exit
      else
        # no release notes otherwise same call as above
-       python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
-         --file "${HTML_ROOT}"/leap/leap-verified-builds.json \
+       python3 /local/eosnetworkfoundation/repos/ericpassmore/spring-website/create_build_history_json.py \
+         --file "${HTML_ROOT}"/spring/spring-verified-builds.json \
          --merge-time "${MERGE_TIME}" \
          --branch "${BRANCH}" \
          --git-short-sha "${GIT_SHORT_SHA}" \

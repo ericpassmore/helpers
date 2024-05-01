@@ -19,7 +19,7 @@ else
   exit
 fi
 
-cd "${LEAP_BUILD_DIR:?}" || exit
+cd "${SPRING_BUILD_DIR:?}" || exit
 
 if [ ! -f "${DATA_DIR}"/snapshots/"${SNAPSHOT}" ]; then
   echo "Exiting snapshot file does not exist ${DATA_DIR}/snapshots/${SNAPSHOT}"

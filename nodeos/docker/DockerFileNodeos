@@ -34,7 +34,7 @@ WORKDIR /local/eosnetworkfoundation
 RUN mkdir /local/eosnetworkfoundation/deb
 RUN mkdir /local/eosnetworkfoundation/repos
 WORKDIR /local/eosnetworkfoundation/repos
-RUN git clone --recursive https://github.com/AntelopeIO/leap.git
+RUN git clone --recursive https://github.com/AntelopeIO/spring.git
 RUN git clone --recursive https://github.com/AntelopeIO/cdt.git
 RUN git clone https://github.com/AntelopeIO/reference-contracts.git
 RUN git clone https://github.com/eosnetworkfoundation/eos-system-contracts.git

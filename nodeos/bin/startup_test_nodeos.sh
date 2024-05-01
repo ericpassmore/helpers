@@ -139,8 +139,8 @@ clean_nodeos() {
 
 ## Source Config, provides the following:
 # ROOT_DIR
-# LEAP_GIT_DIR
-# LEAP_BUILD_DIR
+# SPRING_GIT_DIR
+# SPRING_BUILD_DIR
 # TEMPLATE_DIR
 # NODEOS_RUN_DIR
 # CONFIG_DIR

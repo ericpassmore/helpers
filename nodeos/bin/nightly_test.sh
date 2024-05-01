@@ -15,7 +15,7 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
-cd "${LEAP_BUILD_DIR:?}" || exit
+cd "${SPRING_BUILD_DIR:?}" || exit
 
 TODAY=$(date -u +%F)
 ctest -j "16" -LE _tests >> "$LOG_DIR"/nodeos_nightly_test_"${TODAY}".log 2>&1

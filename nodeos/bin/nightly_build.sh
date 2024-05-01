@@ -23,18 +23,18 @@ else
   echo "Cannot find ${NODEOS_CONFIG}"
   exit
 fi
-cd "${LEAP_GIT_DIR:?}" || exit
+cd "${SPRING_GIT_DIR:?}" || exit
 
 TODAY=$(date -u +%F)
 git pull
 git submodule update --init --recursive
 
-[ ! -d "$LEAP_BUILD_DIR"/packages ] && mkdir -p "$LEAP_BUILD_DIR"/packages
-cd "${LEAP_BUILD_DIR:?}" || exit
+[ ! -d "$SPRING_BUILD_DIR"/packages ] && mkdir -p "$SPRING_BUILD_DIR"/packages
+cd "${SPRING_BUILD_DIR:?}" || exit
 if [ $LOCAL_ONLY_BUILD == 0 ]; then
-    docker build -f "$LEAP_GIT_DIR"/tools/reproducible.Dockerfile -o "$LEAP_BUILD_DIR"/packages/ "$LEAP_GIT_DIR"
+    docker build -f "$SPRING_GIT_DIR"/tools/reproducible.Dockerfile -o "$SPRING_BUILD_DIR"/packages/ "$SPRING_GIT_DIR"
 else
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 "$LEAP_GIT_DIR" >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 "$SPRING_GIT_DIR" >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
     make -j "${NPROC}" package >> "$LOG_DIR"/nodeos_nightly_build_"${TODAY}".log 2>&1
 fi
 END=$(date +%s.%N)

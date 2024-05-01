@@ -19,7 +19,7 @@ else
   exit
 fi
 
-cd "${LEAP_BUILD_DIR:?}" || exit
+cd "${SPRING_BUILD_DIR:?}" || exit
 
 if [ "$STATE_HISTORY" == "NO" ]; then
   nodeos --config-dir "$CONFIG_DIR" --data-dir "$DATA_DIR"

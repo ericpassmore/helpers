@@ -7,8 +7,8 @@ ln -s /local/eosnetworkfoundation/repos/helpers/nodeos/bin /local/eosnetworkfoun
 source /local/eosnetworkfoundation/bin/nodeos_config.sh
 
 cd "${ROOT_DIR:?}"/deb || exit
-echo "GET LEAP DEB"
-wget https://github.com/AntelopeIO/leap/releases/download/v5.0.2/leap_5.0.2_amd64.deb
+echo "GET SPRING DEB"
+wget https://github.com/AntelopeIO/spring/releases/download/v0.0.0/spring_0.0.0_amd64.deb
 
 echo "START BUILDING CDT"
 cd "${ROOT_DIR:?}"/repos/cdt || exit
@@ -26,6 +26,6 @@ mkdir $WALLET_DIR $CONFIG_DIR $DATA_DIR
 
 ## su to root and install
 # cd /local/eosnetworkfoundation/deb/
-# dpkg -i ./leap_[5-6].[0-9].[0-9]*_amd64.deb
+# dpkg -i ./spring_[5-6].[0-9].[0-9]*_amd64.deb
 # cd /local/eosnetworkfoundation/repos/cdt/build || exit
 # make install

@@ -1,6 +1,6 @@
 ROOT_DIR=/local/eosnetworkfoundation
-LEAP_GIT_DIR="${ROOT_DIR}"/downloads/leap
-LEAP_BUILD_DIR="${ROOT_DIR}"/leap_build
+SPRING_GIT_DIR="${ROOT_DIR}"/downloads/spring
+SPRING_BUILD_DIR="${ROOT_DIR}"/spring_build
 TEMPLATE_DIR="${ROOT_DIR}"/config
 NODEOS_RUN_DIR=/bigata1/eosio/nodeos
 CONFIG_DIR="${NODEOS_RUN_DIR}"/config
