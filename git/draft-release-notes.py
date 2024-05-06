@@ -236,6 +236,8 @@ class GH_PullRequest:
                     category = f" Category: {cat_name}"
                     group = f" Group: {group_name}"
                     approvers = f" Approvers: {', '.join(item['approvers'])}"
+                    if not item['summary']:
+                        item['summary'] = item['title']
                     summary = f" Summary: {item['summary']}"
                     content += pr_num + summary + category + group + author + "\n"
         return content
@@ -340,17 +342,25 @@ class GH_PullRequest:
 
     def as_markdown(self, category_listing, newafter=-1):
         content = ""
-        full_list = ""
+        contributors = {}
         for cat_name in category_listing:
-            content += f"## {cat_name}\n"
+            if not cat_name:
+                cat_name = "NO CATEGORY"
+            content += f"[comment]: <> ({cat_name})\n"
             for group_name in category_listing[cat_name]:
-                content += f"### {group_name}\n"
+                if not group_name:
+                    group_name = "Uncategorized"
+                content += f"### {group_name.capitalize()}\n"
                 for record in category_listing[cat_name][group_name]:
+                    if not record['summary']:
+                        record['summary'] = record['title']
                     content += '[' + record['summary'] + '](' +  record['pr_link'] + ')\n'
-                    full_list += f"{record['summary']} by {record['author']} in {record['pr_link']}\n"
+                    contributors[record['author']] = True
 
-        content += "## Full PR List\n"
-        content += full_list
+        content += """## Contributors
+Special thanks to the contributors that submitted patches for this release:\n\n"""
+        for author in contributors.keys():
+            content += f"- @{author}\n"
 
         return content
 
@@ -437,12 +447,18 @@ if __name__ == '__main__':
                 print(f"Text Block {start} to {end-1}")
             # Create an array of GitMerge objects
             # GitMerge object has properites with the commit log data
-            merges.append(GitMerge(messages[start:end]))
+            this_merge = GitMerge(messages[start:end])
+            if int(this_merge.prnumber) > 0:
+                if DEBUG:
+                    print (f"PR number from merge {this_merge.prnumber}")
+                merges.append(this_merge)
+            else:
+                print(f"Warning: Not able to parse commit {this_merge.commit} {this_merge.prlog}")
         # last block's end is new block's start
         start = end
 
     if DEBUG:
-        print(f"Gathering Issues Details using gh pr view")
+        print("Gathering Issues Details using gh pr view")
     # print document header
     is_html = args.html or args.full_html
     print(start_doc(args.start, is_html, args.no_html_header))
