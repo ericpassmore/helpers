@@ -345,12 +345,14 @@ class GH_PullRequest:
         contributors = {}
         for cat_name in category_listing:
             if not cat_name:
-                cat_name = "NO CATEGORY"
-            content += f"[comment]: <> ({cat_name})\n"
+                content += "[comment]: <> (NO CATEGORY)\n"
+            else:
+                content += f"[comment]: <> ({cat_name})\n"
             for group_name in category_listing[cat_name]:
                 if not group_name:
-                    group_name = "Uncategorized"
-                content += f"### {group_name.capitalize()}\n"
+                    content += "### Uncategorized\n"
+                else:
+                    content += f"### {group_name.capitalize()}\n"
                 for record in category_listing[cat_name][group_name]:
                     if not record['summary']:
                         record['summary'] = record['title']
@@ -378,13 +380,18 @@ Special thanks to the contributors that submitted patches for this release:\n\n"
         summary = f"Summary: {self.enf_meta_data['summary']}\n"
         return summary + author + pr_num + group + category + issues + milestone + is_draft
 
-def get_git_log_messages(repo_path, start):
+def get_git_log_messages(repo_path, start, deep_search):
     range=start+'..HEAD'
 
     if start == "lastweek":
         range='--since="1 week ago"'
 
-    command = ['git', '-C', repo_path, 'log', range, '--abbrev-commit', '--merges', '--first-parent']
+    command = ['git', '-C', repo_path, 'log', range, '--abbrev-commit', '--merges']
+    if not deep_search:
+        if DEBUG:
+            print("Scoping search to first parent")
+        command.append('--first-parent')
+
     result = subprocess.run(command, capture_output=True, text=True)
 
     if result.returncode != 0:
@@ -405,6 +412,8 @@ if __name__ == '__main__':
     parser.add_argument('--useage', '-u', action='store_true', help='print useage')
     parser.add_argument('--no-html-header', action='store_true', help='supress html header')
     parser.add_argument('--no-html-footer', action='store_true', help='supress html footer')
+    parser.add_argument('--deep-search', action='store_true', help='searches for nested merges PR -> PR -> PR')
+    parser.add_argument('--high-watermark-cutoff', type=int, default=-1, help='skips processing PR details when PR Num above')
 
     args = parser.parse_args()
 
@@ -422,7 +431,7 @@ if __name__ == '__main__':
     # owner/repo parsed from .gitconfig origin url
     git_repo_name = git_repo_name()
     # get all the first parent merge requests to branch
-    messages = get_git_log_messages(".",args.start)
+    messages = get_git_log_messages(".",args.start, args.deep_search)
     # split the string into an array of commits
     pattern = re.compile(r"^commit\s+\w+", re.MULTILINE)
     commit_boundry = pattern.finditer(messages)
@@ -448,7 +457,8 @@ if __name__ == '__main__':
             # Create an array of GitMerge objects
             # GitMerge object has properites with the commit log data
             this_merge = GitMerge(messages[start:end])
-            if int(this_merge.prnumber) > 0:
+            if int(this_merge.prnumber) > 0 \
+               and (int(this_merge.prnumber) < args.high_watermark_cutoff or args.high_watermark_cutoff == -1):
                 if DEBUG:
                     print (f"PR number from merge {this_merge.prnumber}")
                 merges.append(this_merge)
