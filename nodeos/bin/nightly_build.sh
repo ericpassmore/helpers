@@ -24,6 +24,8 @@ else
   exit
 fi
 cd "${SPRING_GIT_DIR:?}" || exit
+sed 's/project(\s*spring\s*)/project( antelope-spring )/' CMakeLists.txt > CMakeLists.orig
+cp CMakeLists.orig CMakeLists.txt
 
 TODAY=$(date -u +%F)
 git pull
