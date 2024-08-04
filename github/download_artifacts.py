@@ -23,7 +23,7 @@ def get_pr_list(branch, token):
     # this will store the record for the most recent pr
     pr_list = {}
     # set url
-    url='https://api.github.com/repos/AntelopeIO/leap/pulls'
+    url='https://api.github.com/repos/AntelopeIO/spring/pulls'
     # set params
     params = {'base': branch, 'state': 'closed'}
 
@@ -71,7 +71,7 @@ def get_latest_build_action(action, head_sha, token):
     # this will store the record for the most recent action
     latest_action = {}
     # set url
-    url='https://api.github.com/repos/AntelopeIO/leap/actions/runs'
+    url='https://api.github.com/repos/AntelopeIO/spring/actions/runs'
     # set params
     params = {'head_sha': head_sha, 'event': 'push'}
 
@@ -110,7 +110,7 @@ def get_latest_build_action(action, head_sha, token):
 def get_deb_download_url(artifact_id, artifact_name, token):
     """Now get the URL for our artifact"""
     # set url
-    url=f"https://api.github.com/repos/AntelopeIO/leap/actions/runs/{artifact_id}/artifacts"
+    url=f"https://api.github.com/repos/AntelopeIO/spring/actions/runs/{artifact_id}/artifacts"
 
     # API Request
     query_artifacts = requests.get(url,
