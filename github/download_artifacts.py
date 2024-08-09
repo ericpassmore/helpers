@@ -122,18 +122,17 @@ def get_deb_download_url(artifact_id, artifact_name, token):
         root = json.loads(root_json)
 
         for item in root['artifacts']:
+            # print (f"ARTIFACT ----> {item['name']} COMPARING --> {artifact_name}")
             if item['name'] == artifact_name:
-                logging.debug('matching artifact %s with id %i',
-                    item['name'], item['id'])
-
-            return {
-                'name': item['name'],
-                'id': item['id'],
-                'url': item['url'],
-                'archive_download_url': item['archive_download_url'],
-                'is_expired': item['expired'],
-                'expires_at': datetime.strptime(item['expires_at'], '%Y-%m-%dT%H:%M:%SZ')
-            }
+                # print (f"matching artifact {item['name']} with id {item['id']}")
+                return {
+                    'name': item['name'],
+                    'id': item['id'],
+                    'url': item['url'],
+                    'archive_download_url': item['archive_download_url'],
+                    'is_expired': item['expired'],
+                    'expires_at': datetime.strptime(item['expires_at'], '%Y-%m-%dT%H:%M:%SZ')
+                }
     return None
 
 def download_artifact(url, destination_dir, file_name, token):
@@ -166,7 +165,7 @@ def unzip_artifact(destination_dir, file_name, merge_sha):
     """unzip artifact and print out information on deb"""
 
     zip_file = destination_dir+"/"+file_name
-    deb_file_pattern = re.compile('.*leap_[0-9].+_amd64.deb$')
+    deb_file_pattern = re.compile('.*antelope-spring_[0-9].+_amd64.deb$')
 
     # replace file if it already exists, remove first
     logging.info("cleaning out previous debs in dir %s", destination_dir)
@@ -183,7 +182,7 @@ def unzip_artifact(destination_dir, file_name, merge_sha):
     unzip_cmd = ["unzip", zip_file, "-d", destination_dir]
     logging.info("running cmd %s", unzip_cmd)
     unzip_result = subprocess.run(unzip_cmd, \
-        check=False, timeout=3, capture_output=True, text=True)
+        check=False, timeout=30, capture_output=True, text=True)
     if unzip_result.returncode != 0:
         logging.error("failed to unzip %s error %s", zip_file, unzip_result.stderr)
         exit()
@@ -238,7 +237,7 @@ and returns the associated git commit""")
 
     args = parser.parse_args()
     BUILD_TEST_ACTION='Build & Test'
-    ARTIFACT='leap-deb-amd64'
+    ARTIFACT='antelope-spring-deb-amd64'
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -303,8 +302,8 @@ and returns the associated git commit""")
     logging.debug(most_recent_action)
 
     # Step 3. Get all the artifacts from workflow
-    # iterate over list "artifacts" look for name = "leap-deb-amd64" and return "id" and "archive_download_url"
-    logging.info("Step 3: query for artifact %s", ARTIFACT)
+    # iterate over list "artifacts" look for name = "antelope-spring-deb-amd64" and return "id" and "archive_download_url"
+    logging.info("Step 3: query for artifact %s using github action id %i", ARTIFACT, most_recent_action['id'])
     artifact = get_deb_download_url(most_recent_action['id'],
         ARTIFACT,
         args.bearer_token)
