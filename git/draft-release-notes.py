@@ -217,12 +217,14 @@ class GH_PullRequest:
             if match:
                 for line in match.group(1).split('\n'):
                     parts = line.split(":")
-                    if parts[0] == "group":
-                        meta_data['group'] = parts[1].strip()
-                    if parts[0] == "category":
-                        meta_data['category'] = parts[1].strip()
-                    if parts[0] == "summary":
-                        meta_data['summary'] = parts[1].strip()
+                    first = parts.pop(0)
+                    remainder = ":".join(parts)
+                    if first == "group":
+                        meta_data['group'] = remainder.strip()
+                    if first == "category":
+                        meta_data['category'] = remainder.strip()
+                    if first == "summary":
+                        meta_data['summary'] = remainder.strip()
         return meta_data
 
     def as_oneline(self, category_listing, newafter=-1):
