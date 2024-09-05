@@ -63,7 +63,7 @@ cd "${SPRING_BUILD_DIR:?}" || exit
 docker build -f "$SPRING_GIT_DIR"/tools/reproducible.Dockerfile -o ./signed-outputs/local "$SPRING_GIT_DIR"
 
 sleep 2
-CHECKSUM=$(sha256sum "$SPRING_BUILD_DIR"/signed-outputs/local/spring_[0-9]*_amd64.deb)
+CHECKSUM=$(sha256sum "$SPRING_BUILD_DIR"/signed-outputs/local/antelope-spring_[0-9]*_amd64.deb)
 echo "${CHECKSUM}" > "$SPRING_BUILD_DIR"/signed-outputs/local-sha256sum.txt
 
 ## get ci deb
@@ -83,7 +83,7 @@ if [ "$LOCAL_CHECKSUM" == "$CI_CHECKSUM" ]; then
   echo "checksums are equal you may sign"
   if [ $PARENT_SHELL == "tty" ]; then
      cd "${SPRING_BUILD_DIR:?}"/signed-outputs || exit
-     gpg --detach-sign --armor --default-key "${GIT_KEY}" "$SPRING_BUILD_DIR"/signed-outputs/local/spring_[0-9]*_amd64.deb
+     gpg --detach-sign --armor --default-key "${GIT_KEY}" "$SPRING_BUILD_DIR"/signed-outputs/local/antelope-spring_[0-9]*_amd64.deb
      GIT_LONG_SHA=$(cat "$SPRING_BUILD_DIR"/signed-outputs/ci-package-info.json | \
        python3 -c "import sys
 import json
@@ -103,8 +103,8 @@ python3 -c "import sys
 import json
 print (json.load(sys.stdin)['merge_time'])")
 
-     cp "${SPRING_BUILD_DIR}"/signed-outputs/local/spring_*.deb.asc "${HTML_ROOT}"/spring/signatures/${GIT_SHORT_SHA}.asc
-     DEB_FILE=$(basename "${SPRING_BUILD_DIR}"/signed-outputs/local/spring_*.deb)
+     cp "${SPRING_BUILD_DIR}"/signed-outputs/local/antelope-spring_*.deb.asc "${HTML_ROOT}"/spring/signatures/${GIT_SHORT_SHA}.asc
+     DEB_FILE=$(basename "${SPRING_BUILD_DIR}"/signed-outputs/local/antelope-spring_*.deb)
      DEB_FILE_SHA="${DEB_FILE%.*}_${GIT_SHORT_SHA}.deb"
      DOWNLOAD_URL=/spring/packages/"${DEB_FILE_SHA}"
      cp "${SPRING_BUILD_DIR}"/signed-outputs/local/"${DEB_FILE}" "${HTML_ROOT}"/spring/packages/"${DEB_FILE_SHA}"
