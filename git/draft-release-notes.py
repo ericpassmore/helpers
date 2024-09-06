@@ -208,7 +208,7 @@ class GH_PullRequest:
 
     def pull_enf_notes(self, comments):
         meta_data = {
-            'group': None,
+            'component': None,
             'category': None,
             'summary': None,
             }
@@ -219,8 +219,9 @@ class GH_PullRequest:
                     parts = line.split(":")
                     first = parts.pop(0)
                     remainder = ":".join(parts)
-                    if first == "group":
-                        meta_data['group'] = remainder.strip()
+                    # keep group for backward compatibility with older comments
+                    if first == "group" or first == "component":
+                        meta_data['component'] = remainder.strip()
                     if first == "category":
                         meta_data['category'] = remainder.strip()
                     if first == "summary":
@@ -231,17 +232,17 @@ class GH_PullRequest:
         content = ""
         full_list = ""
         for cat_name in category_listing:
-            for group_name in category_listing[cat_name]:
-                for item in category_listing[cat_name][group_name]:
+            for component_name in category_listing[cat_name]:
+                for item in category_listing[cat_name][component_name]:
                     author = f" Author: {item['author']}"
                     pr_num = f"PR Num: {item['pr_num']}"
                     category = f" Category: {cat_name}"
-                    group = f" Group: {group_name}"
+                    component = f" Component: {component_name}"
                     approvers = f" Approvers: {', '.join(item['approvers'])}"
                     if not item['summary']:
                         item['summary'] = item['title']
                     summary = f" Summary: {item['summary']}"
-                    content += pr_num + summary + category + group + author + "\n"
+                    content += pr_num + summary + category + component + author + "\n"
         return content
 
     def replace_with_link(self, match):
@@ -260,15 +261,15 @@ class GH_PullRequest:
         content = ""
         for cat_name in category_listing:
             content += f"<h2>{cat_name}</h2>\n"
-            for group_name in category_listing[cat_name]:
-                content += f"<h3>{group_name}</h3>\n"
-                for item in category_listing[cat_name][group_name]:
+            for component_name in category_listing[cat_name]:
+                content += f"<h3>{component_name}</h3>\n"
+                for item in category_listing[cat_name][component_name]:
                     newtag = ""
                     if newafter > 0 and item['pr_num'] > newafter:
                         newtag = "<font color='red'> NEW </font>"
 
                     contributors = f"<p>Author: {item['author']} "
-                    category = f"<p>Group: {item['group']} "
+                    category = f"<p>Component: {item['component']} "
                     category = f" Category: {item['category']}</p>\n"
 
                     linked_title  = f"<h4 class='prlink'>{newtag}<a href=\"{item['pr_link']}\">{item['summary']}</a></h4>\n"
@@ -296,9 +297,9 @@ class GH_PullRequest:
         full_list = ""
         for cat_name in category_listing:
             content += f"<h2>{cat_name}</h2>\n"
-            for group_name in category_listing[cat_name]:
-                content += f"<h3>{group_name}</h3>\n"
-                for item in category_listing[cat_name][group_name]:
+            for component_name in category_listing[cat_name]:
+                content += f"<h3>{component_name}</h3>\n"
+                for item in category_listing[cat_name][component_name]:
                     newtag = ""
                     if newafter > 0 and item['pr_num'] > newafter:
                         newtag = "<font color='red'> NEW </font>"
@@ -315,7 +316,7 @@ class GH_PullRequest:
         item = {
             'base_url': f"https://github.com/{self.git_repo_path}",
             'category': self.enf_meta_data['category'],
-            'group': self.enf_meta_data['group'],
+            'component': self.enf_meta_data['component'],
             'summary': self.enf_meta_data['summary'],
             'pr_link': f"{base_url}/pull/{self.prnum}",
             'author': self.author,
@@ -330,15 +331,15 @@ class GH_PullRequest:
         }
 
         if item['category'] in category_listing:
-            if item['group'] in category_listing[item['category']]:
-                category_listing[item['category']][item['group']].append(item)
+            if item['component'] in category_listing[item['category']]:
+                category_listing[item['category']][item['component']].append(item)
             else:
-                category_listing[item['category']][item['group']] = []
-                category_listing[item['category']][item['group']].append(item)
+                category_listing[item['category']][item['component']] = []
+                category_listing[item['category']][item['component']].append(item)
         else:
             category_listing[item['category']] = {}
-            category_listing[item['category']][item['group']] = []
-            category_listing[item['category']][item['group']].append(item)
+            category_listing[item['category']][item['component']] = []
+            category_listing[item['category']][item['component']].append(item)
 
         return category_listing
 
@@ -350,12 +351,12 @@ class GH_PullRequest:
                 content += "[comment]: <> (NO CATEGORY)\n"
             else:
                 content += f"[comment]: <> ({cat_name})\n"
-            for group_name in category_listing[cat_name]:
-                if not group_name:
+            for component_name in category_listing[cat_name]:
+                if not component_name:
                     content += "### Uncategorized\n"
                 else:
-                    content += f"### {group_name.capitalize()}\n"
-                for record in category_listing[cat_name][group_name]:
+                    content += f"### {component_name.capitalize()}\n"
+                for record in category_listing[cat_name][component_name]:
                     if not record['summary']:
                         record['summary'] = record['title']
                     content += '[' + record['summary'] + '](' +  record['pr_link'] + ')\n'
@@ -372,7 +373,7 @@ Special thanks to the contributors that submitted patches for this release:\n\n"
         author = f"Author: {self.author}\n"
         body = f"Body: {self.body}\n"
         category = f"Category: {self.enf_meta_data['category']}\n"
-        group = f"Group: {self.enf_meta_data['group']}\n"
+        component = f"Component: {self.enf_meta_data['component']}\n"
         is_draft = f"isDraft: {self.is_draft}\n"
         milestone = f"Milestone: {self.milestone}\n"
         pr_num = f"PR Num: {self.prnum}\n"
@@ -380,7 +381,7 @@ Special thanks to the contributors that submitted patches for this release:\n\n"
         approvers = f"Approvers: {', '.join(self.approvers)}\n"
         issues = f"Issues: {', '.join(self.issues)}\n"
         summary = f"Summary: {self.enf_meta_data['summary']}\n"
-        return summary + author + pr_num + group + category + issues + milestone + is_draft
+        return summary + author + pr_num + component + category + issues + milestone + is_draft
 
 def get_git_log_messages(repo_path, start, deep_search):
     range=start+'..HEAD'
@@ -494,7 +495,7 @@ if __name__ == '__main__':
         newafter = 0
         if args.newafter:
             newafter = int(args.newafter)
-        # no print just build up categories and groups
+        # no print just build up categories and components
         listing_by_cat = pr_details.build_category_list(listing_by_cat, newafter)
 
     if args.oneline:
