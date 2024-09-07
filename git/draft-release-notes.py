@@ -176,6 +176,7 @@ class GH_PullRequest:
         self.prnum = pull_request_details["number"]
         self.title = pull_request_details["title"]
         self.comments = pull_request_details["comments"]
+        self.labels = [label["name"] for label in pull_request_details["labels"]]
         self.approvers = []
         # loop over all the comments, approvals, and rejections
         # pull out approving authors and append to list
@@ -191,7 +192,7 @@ class GH_PullRequest:
 
     def get_gh_pr(self, prnum):
         # gh pr view --json number,title,author,reviews,isDraft,comments
-        command = ['gh', 'pr', 'view', '--json', 'number,title,author,milestone,isDraft,body,comments,reviews', prnum]
+        command = ['gh', 'pr', 'view', '--json', 'number,title,author,milestone,isDraft,body,comments,reviews,labels', prnum]
         result = subprocess.run(command, capture_output=True, text=True)
 
         if result.returncode != 0:
@@ -206,7 +207,7 @@ class GH_PullRequest:
         # This return a tuple for each keyword found matching both short and long formats
         #  - first tuple matches #XXXX
         #  - second tuple matches https://github.com/org/repo/XXXX
-        search_keywords = '(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|resovles)'
+        search_keywords = '(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|resovles|related\sto)'
         git_issue_pattern = re.compile(r''+search_keywords+'\s+(?:#(\d+)|(https?://\S+/\d+))', re.IGNORECASE)
         for tuple_i in re.findall(git_issue_pattern, body):
             for pos in range(0, 2):
@@ -299,6 +300,9 @@ class GH_PullRequest:
                     else:
                         issues = "<p>Issues: None Linked</p>\n"
 
+                    if len(item['labels']) > 0:
+                        labels = f"<p>Labels: {' '.join(item['labels'])}</p>\n"
+
                     title = f"<p>PR Title: {item['title']}</p>\n"
                     sep = f"<hr width=\"50%\" size=\"3px\" align=\"center\"/>"
                     content += "\n<li>\n" + linked_title + category + \
@@ -384,7 +388,9 @@ class GH_PullRequest:
                 for record in category_listing[cat_name][component_name]:
                     if not record['summary']:
                         record['summary'] = record['title']
-                    content += '[' + record['summary'] + '](' +  record['pr_link'] + ')\n'
+                    if len(record['labels']) > 0:
+                        labels = f": {' '.join(record['labels'])}"
+                    content += '[' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
                     contributors[record['author']] = True
 
         content += """## Contributors
