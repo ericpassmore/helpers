@@ -378,14 +378,14 @@ class GH_PullRequest:
         contributors = {}
         for cat_name in category_listing:
             if not cat_name:
-                content += "[comment]: <> (NO CATEGORY)\n"
+                content += "### Uncategorized\n"
             else:
-                content += f"[comment]: <> ({cat_name})\n"
+                content += f"### {cat_name.capitalize()}\n"
             for component_name in category_listing[cat_name]:
                 if not component_name:
-                    content += "### Uncategorized\n"
+                    content += "[comment]: <> (NO CATEGORY)\n"
                 else:
-                    content += f"### {component_name.capitalize()}\n"
+                    content += f"[comment]: <> ({component_name})\n"
                 for record in category_listing[cat_name][component_name]:
                     if not record['summary']:
                         record['summary'] = record['title']
