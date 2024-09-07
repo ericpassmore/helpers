@@ -13,6 +13,19 @@ def useage():
     message += "  - for a summary use the --oneline option\n"
     message += "  - for a html summary user the --html option\n"
     message += "  - to print this useage try the --useage option\n"
+    message += "EXAMPLE:\n"
+    message += "# print all PRs between v1.0.0-rc1 and head of release/1.0 in markdown format"
+    message += "git checkout release/1.0\n"
+    message += "python3 draft-release-notes.py --markdown v1.0.0-rc1\n\n"
+    message += "# print oneline summary of PRs between main HEAD and commit 118b7a0ea4a88420231506a44588e84340e10da8"
+    message += "git checkout main\n"
+    message += "python3 draft-release-notes.py --oneline 118b7a0ea4a88420231506a44588e84340e10da8\n\n"
+    message += "# order by component print oneline summary of PRs between main HEAD and commit 118b7a0ea4a88420231506a44588e84340e10da8"
+    message += "git checkout main\n"
+    message += "python3 draft-release-notes.py --sort-order component --oneline 118b7a0ea4a88420231506a44588e84340e10da8\n\n"
+    message += "# print oneline summary of PRs in the last week"
+    message += "git checkout main\n"
+    message += "python3 draft-release-notes.py --oneline lastweek\n\n"
 
     return message
 
@@ -306,7 +319,7 @@ class GH_PullRequest:
                     content += f"<li>PR {item['pr_num']}: <a href=\"{item['pr_link']}\">{item['summary']}</a> {newtag} by {item['author']}</li>"
         return content
 
-    def build_category_list(self, category_listing, newafter=-1):
+    def build_category_list(self, category_listing, newafter=-1, sort_order="category"):
         newtag = ""
         if newafter > 0 and self.prnum > newafter:
             newtag = "<font color='red'> NEW </font>"
@@ -330,16 +343,28 @@ class GH_PullRequest:
             'issues': self.issues
         }
 
-        if item['category'] in category_listing:
-            if item['component'] in category_listing[item['category']]:
-                category_listing[item['category']][item['component']].append(item)
+        if (sort_order == 'component'):
+            if item['component'] in category_listing:
+                if item['category'] in category_listing[item['component']]:
+                    category_listing[item['component']][item['category']].append(item)
+                else:
+                    category_listing[item['component']][item['category']] = []
+                    category_listing[item['component']][item['category']].append(item)
             else:
+                category_listing[item['component']] = {}
+                category_listing[item['component']][item['category']] = []
+                category_listing[item['component']][item['category']].append(item)
+        else:
+            if item['category'] in category_listing:
+                if item['component'] in category_listing[item['category']]:
+                    category_listing[item['category']][item['component']].append(item)
+                else:
+                    category_listing[item['category']][item['component']] = []
+                    category_listing[item['category']][item['component']].append(item)
+            else:
+                category_listing[item['category']] = {}
                 category_listing[item['category']][item['component']] = []
                 category_listing[item['category']][item['component']].append(item)
-        else:
-            category_listing[item['category']] = {}
-            category_listing[item['category']][item['component']] = []
-            category_listing[item['category']][item['component']].append(item)
 
         return category_listing
 
@@ -412,6 +437,7 @@ if __name__ == '__main__':
     parser.add_argument('--full-html', action='store_true', help='full html listing for research')
     parser.add_argument('--html', action='store_true', help='oneline summary html')
     parser.add_argument('--markdown', action='store_true', help='markdown version of release notes')
+    parser.add_argument('--sort-order', type=str, default="category", help='changes top level grouping. Takes a single string as an argument "category" or "component"')
     parser.add_argument('--useage', '-u', action='store_true', help='print useage')
     parser.add_argument('--no-html-header', action='store_true', help='supress html header')
     parser.add_argument('--no-html-footer', action='store_true', help='supress html footer')
@@ -496,7 +522,7 @@ if __name__ == '__main__':
         if args.newafter:
             newafter = int(args.newafter)
         # no print just build up categories and components
-        listing_by_cat = pr_details.build_category_list(listing_by_cat, newafter)
+        listing_by_cat = pr_details.build_category_list(listing_by_cat, newafter, args.sort_order)
 
     if args.oneline:
         print(pr_details.as_oneline(listing_by_cat))
