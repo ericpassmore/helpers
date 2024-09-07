@@ -295,7 +295,8 @@ class GH_PullRequest:
                     if len(item['issues']) > 0:
                         issues += "<ul class='issues'>\n"
                         for i in item['issues']:
-                            issues += f"<li><a href=\"{item['base_url']}/issues/{i}\">{i}</a></li>\n"
+                            issue_num = url.split("/").pop()
+                            issues += f"<li><a href=\"{i}\">{issue_num}</a></li>\n"
                         issues += "</ul>\n"
                     else:
                         issues = "<p>Issues: None Linked</p>\n"
