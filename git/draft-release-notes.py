@@ -301,6 +301,7 @@ class GH_PullRequest:
                         issues = "<p>Issues: None Linked</p>\n"
 
                     filtered_labels = [label_tag for label_tag in item['labels'] if label_tag != 'OCI']
+                    labels = ""
                     if len(filtered_labels) > 0:
                         labels = f"<p>Labels: {' '.join(filtered_labels)}</p>\n"
 
