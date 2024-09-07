@@ -300,7 +300,7 @@ class GH_PullRequest:
                     else:
                         issues = "<p>Issues: None Linked</p>\n"
 
-                    filtered_labels = [label_tag for label_tag in labels if label_tag != 'OCI']
+                    filtered_labels = [label_tag for label_tag in item['labels'] if label_tag != 'OCI']
                     if len(filtered_labels) > 0:
                         labels = f"<p>Labels: {' '.join(filtered_labels)}</p>\n"
 
@@ -390,7 +390,7 @@ class GH_PullRequest:
                 for record in category_listing[cat_name][component_name]:
                     if not record['summary']:
                         record['summary'] = record['title']
-                    filtered_labels = [label_tag for label_tag in labels if label_tag != 'OCI']
+                    filtered_labels = [label_tag for label_tag in record['labels'] if label_tag != 'OCI']
                     if len(filtered_labels) > 0:
                         labels = f": {' '.join(filtered_labels)}"
                     content += '[' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
