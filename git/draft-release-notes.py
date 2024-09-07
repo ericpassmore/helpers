@@ -295,7 +295,7 @@ class GH_PullRequest:
                     if len(item['issues']) > 0:
                         issues += "<ul class='issues'>\n"
                         for i in item['issues']:
-                            issue_num = url.split("/").pop()
+                            issue_num = i.split("/").pop()
                             issues += f"<li><a href=\"{i}\">{issue_num}</a></li>\n"
                         issues += "</ul>\n"
                     else:
