@@ -392,6 +392,7 @@ class GH_PullRequest:
                     if not record['summary']:
                         record['summary'] = record['title']
                     filtered_labels = [label_tag for label_tag in record['labels'] if label_tag != 'OCI']
+                    labels = ""
                     if len(filtered_labels) > 0:
                         labels = f": {' '.join(filtered_labels)}"
                     content += '[' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
