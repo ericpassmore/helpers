@@ -344,7 +344,8 @@ class GH_PullRequest:
             'pr_num': self.prnum,
             'title': self.title,
             'approvers': self.approvers,
-            'issues': self.issues
+            'issues': self.issues,
+            'labels': self.labels
         }
 
         if (sort_order == 'component'):
