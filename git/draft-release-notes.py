@@ -306,7 +306,7 @@ class GH_PullRequest:
                     title = f"<p>PR Title: {item['title']}</p>\n"
                     sep = f"<hr width=\"50%\" size=\"3px\" align=\"center\"/>"
                     content += "\n<li>\n" + linked_title + category + \
-                        contributors + issues + body + sep + "\n</li>\n"
+                        contributors + labels + issues + body + sep + "\n</li>\n"
         return content
 
     def as_html(self, category_listing, newafter=-1):
