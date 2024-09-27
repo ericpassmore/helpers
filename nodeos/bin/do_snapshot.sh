@@ -2,24 +2,14 @@
 
 ENDPOINT=${1:-127.0.0.1:8888}
 
-SNAPSHOT_DIR="/bigata1/"
+SNAPSHOT_DIR="/bigata1/nodeos/data/snapshots"
 curl -X POST http://${ENDPOINT}/v1/producer/create_snapshot > ${SNAPSHOT_DIR}/snapshot.json
-SNAP_PATH=$(cat "${SNAPSHOT_DIR}/snapshot.json" | \
-  python3 -c "import sys
-import json
-print (json.load(sys.stdin)['snapshot_name'])")
-SNAP_HEAD_BLOCK=$(cat "${SNAPSHOT_DIR}/snapshot.json" | \
-  python3 -c "import sys
-import json
-print (json.load(sys.stdin)['head_block_num'])")
-VERSION=$(cat "${SNAPSHOT_DIR}/snapshot.json" | \
-  python3 -c "import sys
-import json
-print (json.load(sys.stdin)['version'])")
-HEAD_BLOCK_TIME=$(cat "${SNAPSHOT_DIR}/snapshot.json" | \
-  python3 -c "import sys
-import json
-print (json.load(sys.stdin)['head_block_time'])")
+
+SNAP_PATH=$(jq .snapshot_name /bigata1/nodeos/data/snapshots/snapshot.json | sed 's/"//g')
+SNAP_HEAD_BLOCK=$(jq .head_block_num /bigata1/nodeos/data/snapshots/snapshot.json)
+VERSION=$(jq .version /bigata1/nodeos/data/snapshots/snapshot.json)
+HEAD_BLOCK_TIME=$(jq .head_block_time /bigata1/nodeos/data/snapshots/snapshot.json | sed 's/"//g')
+
 
 DATE=${HEAD_BLOCK_TIME%T*}
 TIME=${HEAD_BLOCK_TIME#*T}
