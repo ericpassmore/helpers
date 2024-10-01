@@ -502,6 +502,11 @@ if __name__ == '__main__':
                and (int(this_merge.prnumber) < args.high_watermark_cutoff or args.high_watermark_cutoff == -1):
                 if DEBUG:
                     print (f"PR number from merge {this_merge.prnumber}")
+                # filter out reverted PRs
+                if git_repo_name.lower() == "AntelopeIO/Spring".lower() and int(this_merge.prnumber) in [825, 826, 840, 841]:
+                    if DEBUG:
+                        print (f"Skipping Spring reverted PR {this_merge.prnumber}")
+                    continue
                 merges.append(this_merge)
             else:
                 print(f"Warning: Not able to parse commit {this_merge.commit} {this_merge.prlog}")
