@@ -377,18 +377,19 @@ class GH_PullRequest:
         return category_listing
 
     def as_markdown(self, category_listing, newafter=-1):
-        content = ""
+        content = "## Notable Changes\n- one\n- two\n- three\n## Complete Change Log\n"
         contributors = {}
         for cat_name in category_listing:
-            if not cat_name:
-                content += "### Uncategorized\n"
-            else:
-                content += f"### {cat_name.capitalize()}\n"
             for component_name in category_listing[cat_name]:
-                if not component_name:
-                    content += "##### `NO CATEGORY`\n"
-                else:
-                    content += f"##### `{component_name}`\n"
+                category_title = 'Uncategorized'
+                component_title = 'No Component'
+                if cat_name:
+                    category_title = cat_name.capitalize()
+                if component_name:
+                    component_title = component_name.capitalize()
+
+                content += f'<details><summary><b>{component_title}:{category_title}</b></summary><p>\n\n'
+
                 for record in category_listing[cat_name][component_name]:
                     if not record['summary']:
                         record['summary'] = record['title']
@@ -396,9 +397,9 @@ class GH_PullRequest:
                     labels = ""
                     if len(filtered_labels) > 0:
                         labels = f": {' '.join(filtered_labels)}"
-                    content += '[' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
+                    content += '- [' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
                     contributors[record['author']] = True
-
+                content += '</p></details><br />\n\n'
         content += """## Contributors
 Special thanks to the contributors that submitted patches for this release:\n\n"""
         for author in contributors.keys():
