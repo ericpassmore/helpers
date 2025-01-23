@@ -225,6 +225,7 @@ class GH_PullRequest:
             'component': None,
             'category': None,
             'summary': None,
+            'group_title': None
             }
         for single_comment in comments:
             match = re.search(r'Note:start(.*?)Note:\s*end', single_comment['body'], re.DOTALL)
@@ -240,6 +241,20 @@ class GH_PullRequest:
                         meta_data['category'] = remainder.strip()
                     if first == "summary":
                         meta_data['summary'] = remainder.strip()
+        
+        if meta_data['component'].upper() == "P2P":
+                meta_data['group_title'] = "P2P"
+        elif meta_data['component'].upper() == "SHIP":
+                meta_data['group_title'] = "SHiP"
+        elif meta_data['category'].upper() == "TEST" or meta_data['category'].upper() == "TESTS":
+                meta_data['group_title'] = "Tests"
+        elif meta_data['category'].upper() == "LOGGING":
+                meta_data['group_title'] = "Logging"
+        elif meta_data['category'].upper() == "CHORE" or meta_data['category'].upper() == "CHORES":
+                meta_data['group_title'] = "Chore"
+        else:
+            meta_data['group_title'] = 'Other'
+        print(f"meta-data {meta_data['component']} {meta_data['category']} => {meta_data['group_title']}")
         return meta_data
 
     def as_oneline(self, category_listing, newafter=-1):
@@ -338,6 +353,7 @@ class GH_PullRequest:
             'category': self.enf_meta_data['category'],
             'component': self.enf_meta_data['component'],
             'summary': self.enf_meta_data['summary'],
+            'group_title': self.enf_meta_data['group_title'],
             'pr_link': f"{base_url}/pull/{self.prnum}",
             'author': self.author,
             'newtag': newtag,
@@ -362,6 +378,13 @@ class GH_PullRequest:
                 category_listing[item['component']] = {}
                 category_listing[item['component']][item['category']] = []
                 category_listing[item['component']][item['category']].append(item)
+        # Group is single level
+        elif (sort_order == 'group'):
+            if item['group_title'] in category_listing:
+                category_listing[item['group_title']].append(item)
+            else:
+                category_listing[item['group_title']] = []
+                category_listing[item['group_title']].append(item)
         else:
             if item['category'] in category_listing:
                 if item['component'] in category_listing[item['category']]:
@@ -375,38 +398,52 @@ class GH_PullRequest:
                 category_listing[item['category']][item['component']].append(item)
 
         return category_listing
+        
+    def markdown_record(self,record,content):
+        if not record['summary']:
+            record['summary'] = record['title']
+        filtered_labels = [label_tag for label_tag in record['labels'] if label_tag != 'OCI']
+        labels = ""
+        if len(filtered_labels) > 0:
+            labels = f" *{' '.join(filtered_labels)}*"
+        content += '- [' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
+        return content
 
-    def as_markdown(self, category_listing, newafter=-1):
+    def as_markdown(self, category_listing, sort_order, newafter=-1):
         content = "## Notable Changes\n- one\n- two\n- three\n## Complete Change Log\n"
         contributors = {}
-        for cat_name in category_listing:
-            for component_name in category_listing[cat_name]:
-                category_title = 'Uncategorized'
-                component_title = 'No Component'
-                if cat_name:
-                    category_title = cat_name.capitalize()
-                if component_name:
-                    component_title = component_name.capitalize()
-
-                content += f'<details><summary><b>{component_title}:{category_title}</b></summary><p>\n\n'
-
-                for record in category_listing[cat_name][component_name]:
-                    if not record['summary']:
-                        record['summary'] = record['title']
-                    filtered_labels = [label_tag for label_tag in record['labels'] if label_tag != 'OCI']
-                    labels = ""
-                    if len(filtered_labels) > 0:
-                        labels = f": {' '.join(filtered_labels)}"
-                    content += '- [' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
+        print (f'************ SORT ORDER {sort_order} **************')
+        if sort_order == 'group':
+            for group_title in category_listing:
+                content += f'<details><summary><b>{group_title}</b></summary><p>\n\n'
+                for record in category_listing[group_title]:
+                    content = self.markdown_record(record,content)
                     contributors[record['author']] = True
+                # end grouping  
                 content += '</p></details><br />\n\n'
+        else:
+            for cat_name in category_listing:
+                for component_name in category_listing[cat_name]:
+                    category_title = 'Uncategorized'
+                    component_title = 'No Component'
+                    if cat_name:
+                        category_title = cat_name.capitalize()
+                    if component_name:
+                        component_title = component_name.capitalize()
+
+                    content += f'<details><summary><b>{cat_name}</b></summary><p>\n\n'
+
+                    for record in category_listing[cat_name][component_name]:
+                        content = self.markdown_record(record,content)
+                        contributors[record['author']] = True
+                
         content += """## Contributors
 Special thanks to the contributors that submitted patches for this release:\n\n"""
         for author in contributors.keys():
             content += f"- @{author}\n"
 
         return content
-
+        
     def __str__(self):
         author = f"Author: {self.author}\n"
         body = f"Body: {self.body}\n"
@@ -544,7 +581,7 @@ if __name__ == '__main__':
     elif args.html:
         print(pr_details.as_html(listing_by_cat, newafter))
     elif args.markdown:
-        print(pr_details.as_markdown(listing_by_cat))
+        print(pr_details.as_markdown(listing_by_cat, args.sort_order))
 
     # print document footer
     print(end_doc(is_html, args.no_html_footer))
