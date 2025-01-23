@@ -44,25 +44,27 @@ There are 4 output options
 
 ## Typical UseCases 
 Since `draft-release-notes.py` uses the local github instance, if you want to see all the changes in a specific branch, you only need to checkout that branch. 
+Some things to note, by default fine grained components and categories are shown. For a higher level grouping use `--sort-order=group`. 
+By default pr which have previously been merged in from an earlier release branch are not shown. If you want to see all PRs provide the `--show-all-prs` argument. 
 For example if you wanted to see all the changes for the next release candidate, and that release canidate was on branch `release/1.0` You would do the following:
 #### Release Candidate 
 - `cd spring`
 - `git checkout release/1.0`
 - `git pull origing release/1.0`
-- `python3 $HOME/helpers/git/draft-release-notes.py v1.0.2 --markdown`
+- `python3 $HOME/helpers/git/draft-release-notes.py v1.0.2 --markdown --sort-order=group`
 
 #### Changes Last Week
 - `cd spring`
 - `git checkout main`
 - `git pull origin main`
-- `python3 $HOME/helpers/git/draft-release-notes.py lastweek --oneline`
+- `python3 $HOME/helpers/git/draft-release-notes.py lastweek --oneline --show-all-prs`
 
 #### Changes Since A PR
 First find the commit hash for the PR.
 - `cd spring`
 - `git checkout main`
 - `git pull origin main`
-- `python3 $HOME/helpers/git/draft-release-notes.py 648ea46e395f354da2af7ba7a61d835f0cc31cb7 --oneline`
+- `python3 $HOME/helpers/git/draft-release-notes.py 648ea46e395f354da2af7ba7a61d835f0cc31cb7 --oneline --show-all-prs`
 
 #### Changes Since v1.0.2 Up To A Specific Point
 First find the commit hash for the stopping point 

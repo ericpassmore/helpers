@@ -189,6 +189,8 @@ class GH_PullRequest:
         self.issues = self.search_issues(self.body)
         # parse special meta data
         self.enf_meta_data = self.pull_enf_notes(self.comments)
+        self.previous_merge_pattern = re.compile(r'^previous-merge-.*')
+        self.previous_merge_label = 'previous-merge-'
 
     def get_gh_pr(self, prnum):
         # gh pr view --json number,title,author,reviews,isDraft,comments
@@ -254,24 +256,37 @@ class GH_PullRequest:
                 meta_data['group_title'] = "Chore"
         else:
             meta_data['group_title'] = 'Other'
-        print(f"meta-data {meta_data['component']} {meta_data['category']} => {meta_data['group_title']}")
+        if DEBUG == True:
+            print(f"meta-data {meta_data['component']} {meta_data['category']} => {meta_data['group_title']}")
         return meta_data
 
-    def as_oneline(self, category_listing, newafter=-1):
+    def as_oneline(self, category_listing, sort_order, show_all_prs, newafter=-1):
         content = ""
         full_list = ""
-        for cat_name in category_listing:
-            for component_name in category_listing[cat_name]:
-                for item in category_listing[cat_name][component_name]:
-                    author = f" Author: {item['author']}"
-                    pr_num = f"PR Num: {item['pr_num']}"
-                    category = f" Category: {cat_name}"
-                    component = f" Component: {component_name}"
-                    approvers = f" Approvers: {', '.join(item['approvers'])}"
-                    if not item['summary']:
-                        item['summary'] = item['title']
-                    summary = f" Summary: {item['summary']}"
-                    content += pr_num + summary + category + component + author + "\n"
+        
+        if DEBUG == True:
+            print (f'************ SORT ORDER {sort_order} **************')
+        if sort_order == 'group':
+            for group_title in category_listing:
+                for item in category_listing[group_title]:
+                    content = self.oneline_record(item, content, group_title, show_all_prs)
+        else:
+            for cat_name in category_listing:
+                for component_name in category_listing[cat_name]:
+                    for item in category_listing[cat_name][component_name]:
+                        group_title = f" Category: {cat_name} Component: {component_name}"
+                        content = self.oneline_record(item, content, group_title, show_all_prs)
+        return content
+        
+    def oneline_record(self, item, content, group_title, show_all_prs):
+        author = f" Author: {item['author']}"
+        pr_num = f"PR Num: {item['pr_num']}"
+        approvers = f" Approvers: {', '.join(item['approvers'])}"
+        if not item['summary']:
+            item['summary'] = item['title']
+        summary = f" Summary: {item['summary']}"
+        if GH_PullRequest.check_show_pr(item['labels'], self.previous_merge_pattern, show_all_prs):
+            content += pr_num + summary + group_title + author + "\n"
         return content
 
     def replace_with_link(self, match):
@@ -320,7 +335,6 @@ class GH_PullRequest:
                     labels = ""
                     if len(filtered_labels) > 0:
                         labels = f"<p>Labels: {' '.join(filtered_labels)}</p>\n"
-
                     title = f"<p>PR Title: {item['title']}</p>\n"
                     sep = f"<hr width=\"50%\" size=\"3px\" align=\"center\"/>"
                     content += "\n<li>\n" + linked_title + category + \
@@ -347,6 +361,12 @@ class GH_PullRequest:
             newtag = "<font color='red'> NEW </font>"
 
         base_url = f"https://github.com/{self.git_repo_path}"
+        
+        match_previous_merge = re.search('\[\s*(\d\.\d)\s*->\s*[/\.\w-]+\s*\]', self.title)
+        if match_previous_merge:
+            if DEBUG:
+                print (f"PR #{self.prnum} adding label for {self.previous_merge_label}{match_previous_merge.group(1)}")
+            self.labels.append(f'{self.previous_merge_label}{match_previous_merge.group(1)}')
 
         item = {
             'base_url': f"https://github.com/{self.git_repo_path}",
@@ -399,25 +419,42 @@ class GH_PullRequest:
 
         return category_listing
         
-    def markdown_record(self,record,content):
+    def markdown_record(self,record,content,show_all_prs):
         if not record['summary']:
             record['summary'] = record['title']
         filtered_labels = [label_tag for label_tag in record['labels'] if label_tag != 'OCI']
         labels = ""
         if len(filtered_labels) > 0:
             labels = f" *{' '.join(filtered_labels)}*"
-        content += '- [' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
+        if GH_PullRequest.check_show_pr(record['labels'], self.previous_merge_pattern, show_all_prs):
+            content += '- [' + record['summary'] + '](' +  record['pr_link'] + ')'+labels+'\n'
         return content
+        
+    @staticmethod
+    def check_show_pr(strings, pattern, show_all):
+        '''
+        check the array of strings for the previous-merge lable 
+        if it matches do not show the prs otherwise show prs by default
+        the show all can override and always show the prs 
+        '''
+        if show_all:
+            return True
+        for string in strings:
+            if re.match(pattern, string):
+                return False
+        return True
 
-    def as_markdown(self, category_listing, sort_order, newafter=-1):
+    def as_markdown(self, category_listing, sort_order, show_all_prs, newafter=-1):
         content = "## Notable Changes\n- one\n- two\n- three\n## Complete Change Log\n"
         contributors = {}
-        print (f'************ SORT ORDER {sort_order} **************')
+        
+        if DEBUG == True:
+            print (f'************ SORT ORDER {sort_order} **************')
         if sort_order == 'group':
             for group_title in category_listing:
                 content += f'<details><summary><b>{group_title}</b></summary><p>\n\n'
                 for record in category_listing[group_title]:
-                    content = self.markdown_record(record,content)
+                    content = self.markdown_record(record,content,show_all_prs)
                     contributors[record['author']] = True
                 # end grouping  
                 content += '</p></details><br />\n\n'
@@ -434,7 +471,7 @@ class GH_PullRequest:
                     content += f'<details><summary><b>{cat_name}</b></summary><p>\n\n'
 
                     for record in category_listing[cat_name][component_name]:
-                        content = self.markdown_record(record,content)
+                        content = self.markdown_record(record,content,show_all_prs)
                         contributors[record['author']] = True
                 
         content += """## Contributors
@@ -492,6 +529,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-html-header', action='store_true', help='supress html header')
     parser.add_argument('--no-html-footer', action='store_true', help='supress html footer')
     parser.add_argument('--deep-search', action='store_true', help='searches for nested merges PR -> PR -> PR')
+    parser.add_argument('--show-all-prs',action='store_true',help='shows PRs filtered out because the had been previously merged into an earlier release')
     parser.add_argument('--high-watermark-cutoff', type=int, default=-1, help='skips processing PR details when PR Num above')
 
     args = parser.parse_args()
@@ -554,9 +592,6 @@ if __name__ == '__main__':
     # create data structure for category listings
     listing_by_cat = {}
     for item in merges:
-        # shows work getting done, otherwise you question the silence
-        if DEBUG:
-            print(".")
         # Create an object from the Git PR data
         pr_details = GH_PullRequest(item.prnumber, git_repo_name)
 
@@ -575,13 +610,13 @@ if __name__ == '__main__':
         listing_by_cat = pr_details.build_category_list(listing_by_cat, newafter, args.sort_order)
 
     if args.oneline:
-        print(pr_details.as_oneline(listing_by_cat))
+        print(pr_details.as_oneline(listing_by_cat,args.sort_order,args.show_all_prs))
     elif args.full_html:
         print(pr_details.as_full_html(listing_by_cat, newafter))
     elif args.html:
         print(pr_details.as_html(listing_by_cat, newafter))
     elif args.markdown:
-        print(pr_details.as_markdown(listing_by_cat, args.sort_order))
+        print(pr_details.as_markdown(listing_by_cat, args.sort_order, args.show_all_prs))
 
     # print document footer
     print(end_doc(is_html, args.no_html_footer))
