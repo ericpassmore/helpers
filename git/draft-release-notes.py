@@ -162,7 +162,7 @@ class GitMerge:
 # approvers
 class GH_PullRequest:
     def __init__(self, pr_number, git_repo_path):
-        self.git_repo_path = re.sub("\.git", "", git_repo_path)
+        self.git_repo_path = re.sub(r"\.git", "", git_repo_path)
         # get pr and parse json response
         pull_request_details = json.loads(self.get_gh_pr(pr_number))
         self.author = pull_request_details["author"]["login"]
@@ -209,8 +209,8 @@ class GH_PullRequest:
         # This return a tuple for each keyword found matching both short and long formats
         #  - first tuple matches #XXXX
         #  - second tuple matches https://github.com/org/repo/XXXX
-        search_keywords = '(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|resovles|related\sto)'
-        git_issue_pattern = re.compile(r''+search_keywords+'\s+(?:#(\d+)|(https?://\S+/\d+))', re.IGNORECASE)
+        search_keywords = r'(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved|resovles|related\sto)'
+        git_issue_pattern = re.compile(r''+search_keywords+r'\s+(?:#(\d+)|(https?://\S+/\d+))', re.IGNORECASE)
         for tuple_i in re.findall(git_issue_pattern, body):
             for pos in range(0, 2):
                 if len(tuple_i[pos]) > 0:
@@ -232,6 +232,8 @@ class GH_PullRequest:
         for single_comment in comments:
             match = re.search(r'Note:start(.*?)Note:\s*end', single_comment['body'], re.DOTALL)
             if match:
+                if DEBUG == True:
+                    print (match.group(1))
                 for line in match.group(1).split('\n'):
                     parts = line.split(":")
                     first = parts.pop(0)
@@ -244,15 +246,15 @@ class GH_PullRequest:
                     if first == "summary":
                         meta_data['summary'] = remainder.strip()
         
-        if meta_data['component'].upper() == "P2P":
+        if meta_data['component'] and meta_data['component'].upper() == "P2P":
                 meta_data['group_title'] = "P2P"
-        elif meta_data['component'].upper() == "SHIP":
+        elif meta_data['component'] and meta_data['component'].upper() == "SHIP":
                 meta_data['group_title'] = "SHiP"
-        elif meta_data['category'].upper() == "TEST" or meta_data['category'].upper() == "TESTS":
+        elif meta_data['category'] and (meta_data['category'].upper() == "TEST" or meta_data['category'].upper() == "TESTS"):
                 meta_data['group_title'] = "Tests"
-        elif meta_data['category'].upper() == "LOGGING":
+        elif meta_data['category'] and meta_data['category'].upper() == "LOGGING":
                 meta_data['group_title'] = "Logging"
-        elif meta_data['category'].upper() == "CHORE" or meta_data['category'].upper() == "CHORES":
+        elif meta_data['category'] and (meta_data['category'].upper() == "CHORE" or meta_data['category'].upper() == "CHORES"):
                 meta_data['group_title'] = "Chore"
         else:
             meta_data['group_title'] = 'Other'
@@ -362,7 +364,7 @@ class GH_PullRequest:
 
         base_url = f"https://github.com/{self.git_repo_path}"
         
-        match_previous_merge = re.search('\[\s*(\d\.\d)\s*->\s*[/\.\w-]+\s*\]', self.title)
+        match_previous_merge = re.search(r'\[\s*(\d+(?:\.\d+)*)\s*->\s*[/\.\w-]+\s*\]', self.title)
         if match_previous_merge:
             if DEBUG:
                 print (f"PR #{self.prnum} adding label for {self.previous_merge_label}{match_previous_merge.group(1)}")
