@@ -245,6 +245,7 @@ class GH_PullRequest:
                         meta_data['category'] = remainder.strip()
                     if first == "summary":
                         meta_data['summary'] = remainder.strip()
+<<<<<<< Updated upstream
         
         if meta_data['component'] and meta_data['component'].upper() == "P2P":
                 meta_data['group_title'] = "P2P"
@@ -258,6 +259,23 @@ class GH_PullRequest:
                 meta_data['group_title'] = "Chore"
         else:
             meta_data['group_title'] = 'Other'
+=======
+        if meta_data['component'] and meta_data['category']: 
+            if meta_data['component'].upper() == "P2P":
+                meta_data['group_title'] = "P2P"
+            elif meta_data['component'].upper() == "SHIP":
+                meta_data['group_title'] = "SHiP"
+            elif meta_data['category'].upper() == "TEST" or meta_data['category'].upper() == "TESTS":
+                meta_data['group_title'] = "Tests"
+            elif meta_data['category'].upper() == "LOGGING":
+                meta_data['group_title'] = "Logging"
+            elif meta_data['category'].upper() == "CHORE" or meta_data['category'].upper() == "CHORES":
+                meta_data['group_title'] = "Chore"
+            else:
+                meta_data['group_title'] = 'Other'
+        else:
+            meta_data['group_title'] = 'NA'
+>>>>>>> Stashed changes
         if DEBUG == True:
             print(f"meta-data {meta_data['component']} {meta_data['category']} => {meta_data['group_title']}")
         return meta_data
@@ -364,7 +382,11 @@ class GH_PullRequest:
 
         base_url = f"https://github.com/{self.git_repo_path}"
         
+<<<<<<< Updated upstream
         match_previous_merge = re.search(r'\[\s*(\d+(?:\.\d+)*)\s*->\s*[/\.\w-]+\s*\]', self.title)
+=======
+        match_previous_merge = re.search('\[\s*(\d+(?:\.\d+)*)\s*->\s*[/\.\w-]+\s*\]', self.title)
+>>>>>>> Stashed changes
         if match_previous_merge:
             if DEBUG:
                 print (f"PR #{self.prnum} adding label for {self.previous_merge_label}{match_previous_merge.group(1)}")

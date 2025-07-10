@@ -5,6 +5,7 @@ BRANCH=${1:-release/5.0}
 PARENT_SHELL=${2:-cron}
 TITLE=${3}
 LAST_RELEASE_CHECKPOINT=${4:-HEAD}
+CHECK_NEW_COMMIT=0
 
 TUID=$(id -ur)
 # must not be root to run
@@ -44,7 +45,7 @@ git checkout $BRANCH
 git pull origin $BRANCH
 # has anything changed since last run?
 CURRENT_GIT_SHA=$(git rev-parse HEAD | tr -d '\n')
-if [ $CURRENT_GIT_SHA == ${CI_LAST_GIT_SHA:-0} ]; then
+if [ $CURRENT_GIT_SHA == ${CI_LAST_GIT_SHA:-0} ] && [ $CHECK_NEW_COMMIT == 1 ]; then
   echo "No new commits, exiting now"
   exit
 fi
@@ -52,15 +53,13 @@ fi
 git submodule update --init --recursive
 
 ## setup build dir
-rm -rf $SPRING_BUILD_DIR
-mkdir "$SPRING_BUILD_DIR"
+rm -rf ${SPRING_BUILD_DIR}/signed-outputs/
 mkdir "$SPRING_BUILD_DIR"/signed-outputs
 mkdir "$SPRING_BUILD_DIR"/signed-outputs/ci
 mkdir "$SPRING_BUILD_DIR"/signed-outputs/local
 
 ## run local build
-cd "${SPRING_BUILD_DIR:?}" || exit
-docker build -f "$SPRING_GIT_DIR"/tools/reproducible.Dockerfile -o ./signed-outputs/local "$SPRING_GIT_DIR"
+docker build --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 -f tools/reproducible.Dockerfile -o ${SPRING_BUILD_DIR}/signed-outputs/ https://github.com/AntelopeIO/spring.git#${BRANCH}
 
 sleep 2
 CHECKSUM=$(sha256sum "$SPRING_BUILD_DIR"/signed-outputs/local/antelope-spring_[0-9]*_amd64.deb)
@@ -118,10 +117,8 @@ print (json.load(sys.stdin)['merge_time'])")
      RELEASE_NOTES=""
      if [ "$LAST_RELEASE_CHECKPOINT" != "HEAD" ]; then
        cd "${SPRING_GIT_DIR:?}" || exit
-       python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/git/draft-release-notes.py \
-          --html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/spring/release_notes/${GIT_SHORT_SHA}.html
 
-       python3 /local/eosnetworkfoundation/repos/ericpassmore/spring-website/create_build_history_json.py \
+       python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
           --file "${HTML_ROOT}"/spring/spring-verified-builds.json \
           --merge-time "${MERGE_TIME}" \
           --branch "${BRANCH}" \
@@ -133,13 +130,10 @@ print (json.load(sys.stdin)['merge_time'])")
           --download-url "${DOWNLOAD_URL}" \
           --deb-file-name "${DEB_FILE_SHA}"
 
-       python3 /local/eosnetworkfoundation/repos/ericpassmore/helpers/git/draft-release-notes.py \
-          --full-html "$LAST_RELEASE_CHECKPOINT" > "${HTML_ROOT}"/spring/release_notes/full-${GIT_SHORT_SHA}.html
-
        cd "${SPRING_BUILD_DIR:?}" || exit
      else
        # no release notes otherwise same call as above
-       python3 /local/eosnetworkfoundation/repos/ericpassmore/spring-website/create_build_history_json.py \
+       python3 /local/eosnetworkfoundation/repos/ericpassmore/leap-website/create_build_history_json.py \
          --file "${HTML_ROOT}"/spring/spring-verified-builds.json \
          --merge-time "${MERGE_TIME}" \
          --branch "${BRANCH}" \
