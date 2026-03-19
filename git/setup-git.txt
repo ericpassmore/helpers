@@ -1,0 +1,19 @@
+mkdir .git-keys
+chmod 700 ~/.git-keys/
+cp /Volumes/SNEAKER/SSH/op_ericp.key* ~/.git-keys
+brew install gpg2 gnupg pinentry-mac 
+mkdir ~/.gnupg
+echo "pinentry-program $(brew --prefix)/bin/pinentry-mac" > ~/.gnupg/gpg-agent.conf
+echo 'use-agent' > ~/.gnupg/gpg.conf\n
+ls -l .gnupg/
+echo "export GPG_TTY=$(tty)" .zshc
+source .zshrc
+chmod 700 ~/.gnupg/
+killall gpg-agent
+git config --global gpg.program $(which gpg)
+git config --list
+gpg --import ~/.git-keys/secret-sign.key 
+gpg --list
+gpg --list-secret-keys --keyid-format=long
+git config --global user.signingkey XXXXXXXXXXXXXX
+git config --global commit.gpgsign true
