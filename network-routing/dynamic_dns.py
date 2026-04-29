@@ -3,17 +3,53 @@ import sys
 import os
 import json
 import requests
-from dotenv import dotenv_values
 
 def load_env_variables(env_file):
     """
-    Load environment variables from a file.
+    Load environment variables from a simple KEY=VALUE file.
+    Supports:
+      - NAME=VALUE
+      - NAME="VALUE"
+      - NAME='VALUE'
+      - ignores comments and blank lines
     """
-    env_config = dotenv_values(env_file)
-    if 'CFBEARER' not in env_config and not env_config['CFBEARER']:
-        raise ValueError(f"CFBEARER not found in the env file {env_file}")
-    if 'CFZONE' not in env_config and not env_config['CFZONE']:
-        raise ValueError(f"CFZONE not found in the env file {env_file}")
+    env_config = {}
+
+    try:
+        with open(env_file, 'r') as f:
+            for line_num, raw_line in enumerate(f, 1):
+                line = raw_line.strip()
+
+                # Skip empty lines and comments
+                if not line or line.startswith('#'):
+                    continue
+
+                if '=' not in line:
+                    raise ValueError(f"Invalid line {line_num} in {env_file}: {raw_line.strip()}")
+
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+
+                # Remove surrounding quotes if present
+                if (value.startswith('"') and value.endswith('"')) or \
+                   (value.startswith("'") and value.endswith("'")):
+                    value = value[1:-1]
+
+                env_config[key] = value
+
+    except FileNotFoundError:
+        raise ValueError(f"Env file not found: {env_file}")
+    except OSError as e:
+        raise ValueError(f"Error reading env file {env_file}: {e}")
+
+    # Correct validation logic (fixes your current bug)
+    if not env_config.get('CFBEARER'):
+        raise ValueError(f"CFBEARER not found or empty in {env_file}")
+
+    if not env_config.get('CFZONE'):
+        raise ValueError(f"CFZONE not found or empty in {env_file}")
+
     return env_config
 
 def get_request(token, zone):
@@ -63,7 +99,7 @@ def patch_request(token, zone, record_id, patch_json):
 
 def main():
     """Main method for building dynamic dns updates"""
-    debug=True
+    debug=False
     # documentation see
     # https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-patch-dns-record
     if len(sys.argv) != 3:
