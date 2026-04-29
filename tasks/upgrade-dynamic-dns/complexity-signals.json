@@ -1,0 +1,24 @@
+{
+  "scope": 2,
+  "behavior": 2,
+  "dependency": 2,
+  "uncertainty": 0,
+  "verification": 2,
+  "evidence": {
+    "scope": "files=2 surface=dynamic-dns script plus unit tests within one subsystem",
+    "behavior": "one operational workflow is updated to use the current Cloudflare DNS record API contract and stricter record selection",
+    "dependency": "interfaces=Cloudflare zone DNS records list/edit endpoints plus the env-file credential contract",
+    "uncertainty": "known implementation pattern with bounded script-level refactor risk",
+    "verification": "checks=python3 -m py_compile network-routing/dynamic_dns.py tests/test_dynamic_dns.py; python3 -m compileall -q network-routing tests; python3 -m unittest -q tests.test_dynamic_dns",
+    "guardrails": "no schema/api contract change; no new deps; localized surface; reversible with straightforward verification"
+  },
+  "guardrails": {
+    "no_schema_or_api_contract_change": true,
+    "no_new_external_dependencies": true,
+    "localized_surface": true,
+    "reversible_with_straightforward_verification": true
+  },
+  "overrides": {
+    "reason": ""
+  }
+}
